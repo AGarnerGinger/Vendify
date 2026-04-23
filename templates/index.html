@@ -1,36 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Vendify</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Home - Vendify{% endblock %}
+{% block content %}
+<h2>Featured Products</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+    {% for p in products %}
+    <div class="product-card">
+        <h3>{{ p.title }}</h3>
+        <p><strong>${{ p.price }}</strong></p>
+        <p>Stock: {{ p.inventory }}</p>
+        <a href="/product/{{ p.product_id }}">View Details</a><br>
+        <button onclick="addToCart({{ p.product_id }})">Add to Cart</button>
+    </div>
+    {% endfor %}
+</div>
 
-    <header>
-        <h1>Vendify</h1>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/cart">Cart</a>
-            <a href="/orders">Orders</a>
-            <a href="/login">Login</a>
-            <a href="/register">Register</a>
-        </nav>
-    </header>
-
-    <main>
-        <h2>Products</h2>
-
-        <div class="product-container">
-            {% for product in products %}
-                <div class="product-card">
-                    <h3>{{ product.title }}</h3>
-                    <p>Price: ${{ product.price }}</p>
-                    <p>Stock: {{ product.inventory }}</p>
-                    <button>Add to Cart</button>
-                </div>
-            {% endfor %}
-        </div>
-    </main>
-
-</body>
-</html>
+<script>
+function addToCart(id) {
+    fetch(`/cart/add/${id}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(() => alert('Added to cart!'));
+}
+</script>
+{% endblock %}

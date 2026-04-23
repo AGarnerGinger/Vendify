@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ product.title }}{% endblock %}
+{% block content %}
+<h2>{{ product.title }}</h2>
+<p><strong>Price:</strong> ${{ product.price }}</p>
+<p><strong>Stock:</strong> {{ product.inventory }}</p>
+{% if product.description %}<p>{{ product.description }}</p>{% endif %}
+
+<button onclick="addToCart({{ product.product_id }})">Add to Cart</button>
+<a href="/products">← Back to Shop</a>
+
+<script>
+function addToCart(id) {
+    fetch(`/cart/add/${id}`, {method:'POST'}).then(()=>alert('Added!'));
+}
+</script>
+{% endblock %}

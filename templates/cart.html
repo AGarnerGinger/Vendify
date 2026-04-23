@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Your Cart{% endblock %}
+{% block content %}
+<h2>Your Cart</h2>
+{% if items %}
+    {% for item in items %}
+    <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+        <h4>{{ item.title }}</h4>
+        <p>Price: ${{ item.price }} × {{ item.quantity }}</p>
+    </div>
+    {% endfor %}
+    <a href="/checkout"><button>Proceed to Checkout</button></a>
+{% else %}
+    <p>Your cart is empty.</p>
+{% endif %}
+<a href="/products">Continue Shopping</a>
+{% endblock %}

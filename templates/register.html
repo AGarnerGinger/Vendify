@@ -1,10 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<h2>Create Account</h2>
+<form method="POST">
+    <label>Username:</label><br>
+    <input type="text" name="username" required><br><br>
 
-</body>
-</html>
+    <label>Email:</label><br>
+    <input type="email" name="email" required><br><br>
+
+    <label>Password:</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <label>Account Type:</label><br>
+    <select name="user_type">
+        <option value="customer">Customer</option>
+        <option value="vendor">Vendor</option>
+    </select><br><br>
+
+    <button type="submit">Register</button>
+</form>
+{% endblock %}

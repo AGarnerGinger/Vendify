@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Reviews{% endblock %}
+{% block content %}
+<h2>Customer Reviews</h2>
+
+{% for r in reviews %}
+<div style="border:1px solid #ddd; padding:15px; margin:10px;">
+    <strong>{{ r.rating }}/5 ★</strong> on <em>{{ r.product_title }}</em><br>
+    by {{ r.username }}<br>
+    {{ r.description }}
+</div>
+{% endfor %}
+
+<p><em>Add reviews from the product detail page.</em></p>
+{% endblock %}

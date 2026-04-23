@@ -1,10 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}All Products{% endblock %}
+{% block content %}
+<h2>All Products</h2>
 
-</body>
-</html>
+<form method="GET">
+    Search: <input type="text" name="search" value="{{ request.args.get('search','') }}">
+    Min Price: <input type="number" name="min_price" step="0.01">
+    Max Price: <input type="number" name="max_price" step="0.01">
+    <button type="submit">Filter</button>
+</form>
+
+<hr>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px;">
+    {% for p in products %}
+    <div class="product-card">
+        <h3>{{ p.title }}</h3>
+        <p><strong>${{ p.price }}</strong></p>
+        <p>Stock: {{ p.inventory }}</p>
+        <a href="/product/{{ p.product_id }}">View Details</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

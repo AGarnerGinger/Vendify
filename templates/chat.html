@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Chat{% endblock %}
+{% block content %}
+<h2>Chat with Vendors</h2>
+
+<form method="POST" style="margin-bottom:20px;">
+    <select name="receiver_id" required>
+        <option value="">Select Vendor</option>
+        {% for v in vendors %}
+        <option value="{{ v.user_id }}">{{ v.username }}</option>
+        {% endfor %}
+    </select>
+    <input type="text" name="message" placeholder="Type your message..." required style="width:60%">
+    <button type="submit">Send</button>
+</form>
+
+<h3>Recent Messages</h3>
+{% for m in messages %}
+<div style="border:1px solid #ddd; padding:10px; margin:5px;">
+    <strong>{{ m.other_user }}:</strong> {{ m.message_text }}
+    <small>({{ m.sent_at }})</small>
+</div>
+{% endfor %}
+
+{% if not messages %}
+<p>No messages yet.</p>
+{% endif %}
+{% endblock %}

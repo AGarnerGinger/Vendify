@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}My Products{% endblock %}
+{% block content %}
+<h2>Your Products</h2>
+<a href="/add-product"><button>Add New Product</button></a>
+
+{% for p in products %}
+<div style="border:1px solid #ccc; padding:10px; margin:10px;">
+    <h3>{{ p.title }} - ${{ p.price }}</h3>
+    <p>Stock: {{ p.inventory }}</p>
+    <a href="/edit-product/{{ p.product_id }}">Edit</a> |
+    <a href="/delete-product/{{ p.product_id }}" onclick="return confirm('Delete?')">Delete</a>
+</div>
+{% endfor %}
+{% endblock %}

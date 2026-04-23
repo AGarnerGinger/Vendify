@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Vendify{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Vendify - Multi-Vendor Store</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/products">Shop</a>
+            <a href="/cart">Cart</a>
+            <a href="/orders">My Orders</a>
+            {% if session.get('user_id') %}
+                <span>{{ session.username }} ({{ session.user_type }})</span>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a> | <a href="/register">Register</a>
+            {% endif %}
+            {% if session.get('user_type') == 'vendor' %}<a href="/vendor/products">My Products</a>{% endif %}
+            {% if session.get('user_type') == 'admin' %}<a href="/admin">Admin Panel</a>{% endif %}
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
