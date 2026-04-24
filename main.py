@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 
 app = Flask(__name__)
-app.secret_key = "vendify_super_secret_2026"
+app.secret_key = "vendify-sec-key"
 
 # ===================== DATABASE =====================
 engine = create_engine("mysql+pymysql://root:cset155@localhost/multi_vendor_ecommerce", echo=False)
