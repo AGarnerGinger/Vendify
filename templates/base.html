@@ -13,7 +13,7 @@
             <a href="/cart">Cart</a>
             <a href="/orders">My Orders</a>
             {% if session.get('user_id') %}
-                <span>{{ session.username }} ({{ session.user_type }})</span>
+                <span>{{ session.username }}</span>
                 <a href="/logout">Logout</a>
             {% else %}
                 <a href="/login">Login</a> | <a href="/register">Register</a>

@@ -6,25 +6,25 @@ import datetime
 app = Flask(__name__)
 app.secret_key = "vendify-sec-key"
 
-# ===================== DATABASE =====================
-engine = create_engine("mysql+pymysql://root:cset155@localhost/multi_vendor_ecommerce", echo=False)
+#DATABASE
+engine = create_engine("mysql+pymysql://remote_user:password@172.16.180.26/multi_vendor_ecommerce", echo=False)
 conn = engine.connect()
 
-# ===================== HELPERS =====================
+#HELPERS
 def current_user():
     if 'user_id' in session:
         return conn.execute(text("SELECT * FROM users WHERE user_id = :id"),
                           {"id": session['user_id']}).fetchone()
     return None
 
-# ===================== ROUTES =====================
+#ROUTES
 
 @app.route('/')
 def index():
     products = conn.execute(text("SELECT * FROM products LIMIT 12")).fetchall()
     return render_template('index.html', products=products)
 
-# ------------------ AUTH ------------------
+#AUTH
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -67,7 +67,7 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# ------------------ PRODUCTS ------------------
+#PRODUCTS
 @app.route('/products')
 def products_page():
     search = request.args.get('search', '')
