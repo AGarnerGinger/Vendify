@@ -1,17 +1,87 @@
 {% extends "base.html" %}
-{% block title %}{{ product.title }}{% endblock %}
-{% block content %}
-<h2>{{ product.title }}</h2>
-<p><strong>Price:</strong> ${{ product.price }}</p>
-<p><strong>Stock:</strong> {{ product.inventory }}</p>
-{% if product.description %}<p>{{ product.description }}</p>{% endif %}
+{% block title %}{{ product.title }} - Vendify{% endblock %}
 
-<button onclick="addToCart({{ product.product_id }})">Add to Cart</button>
-<a href="/products">← Back to Shop</a>
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+
+        <!-- Product Image -->
+        <div class="col-lg-6 mb-4">
+            {% if product.image %}
+                <img src="{{ url_for('static', filename='uploads/products/' + product.image) }}"
+                     class="img-fluid rounded shadow"
+                     alt="{{ product.title }}"
+                     style="max-height: 500px; object-fit: contain; width: 100%;">
+            {% else %}
+                <div class="bg-light border rounded d-flex align-items-center justify-content-center"
+                     style="height: 500px;">
+                    <h4 class="text-muted">No Image Available</h4>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-lg-6">
+            <h1 class="mb-3">{{ product.title }}</h1>
+
+            <div class="mb-4">
+                {% if product.sale_price %}
+                    <h2 class="text-danger mb-1">${{ product.sale_price }}</h2>
+                    <p class="text-muted">
+                        <s>${{ product.price }}</s>
+                        <span class="badge bg-danger ms-2">ON SALE</span>
+                    </p>
+                {% else %}
+                    <h2 class="mb-1">${{ product.price }}</h2>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <strong>Stock:</strong>
+                <span class="fs-5 {{ 'text-success' if product.inventory > 0 else 'text-danger' }}">
+                    {{ product.inventory }} units available
+                </span>
+            </div>
+
+            {% if product.description %}
+            <div class="mb-4">
+                <h5>Description</h5>
+                <p class="lead">{{ product.description }}</p>
+            </div>
+            {% endif %}
+
+            <div class="d-grid gap-2">
+                <button onclick="addToCart({{ product.product_id }})"
+                        class="btn btn-success btn-lg">
+                    Add to Cart
+                </button>
+
+                <a href="/products" class="btn btn-outline-secondary">
+                    ← Back to Shop
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 function addToCart(id) {
-    fetch(`/cart/add/${id}`, {method:'POST'}).then(()=>alert('Added!'));
+    fetch(`/cart/add/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Added to cart!');
+        } else if (data.error === "out_of_stock") {
+            alert('❌ Sorry, this item is out of stock!');
+        } else {
+            alert('Please log in to add items to your cart.');
+        }
+    })
+    .catch(() => alert('Error adding to cart'));
 }
 </script>
+
 {% endblock %}

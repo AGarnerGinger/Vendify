@@ -1,15 +1,53 @@
 {% extends "base.html" %}
-{% block title %}Reviews{% endblock %}
+{% block title %}Customer Reviews - Vendify{% endblock %}
+
 {% block content %}
-<h2>Customer Reviews</h2>
+<div class="container my-5">
+    <h1 class="mb-4">Customer Reviews</h1>
 
-{% for r in reviews %}
-<div style="border:1px solid #ddd; padding:15px; margin:10px;">
-    <strong>{{ r.rating }}/5 ★</strong> on <em>{{ r.product_title }}</em><br>
-    by {{ r.username }}<br>
-    {{ r.description }}
+    {% if reviews %}
+    <div class="row g-4">
+        {% for r in reviews %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="mb-1">{{ r.product_title }}</h5>
+                            <small class="text-muted">by {{ r.username }}</small>
+                        </div>
+
+                        <!-- Star Rating -->
+                        <div class="text-warning fs-4">
+                            {{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}
+                            <span class="text-dark ms-2">{{ r.rating }}/5</span>
+                        </div>
+                    </div>
+
+                    <hr>
+                    <p class="lead mb-0">{{ r.description }}</p>
+
+                    {% if r.created_at %}
+                    <small class="text-muted mt-3 d-block">
+                        Reviewed on {{ r.created_at.strftime('%B %d, %Y') }}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <h4 class="text-muted">No reviews yet.</h4>
+        <p class="text-muted">Reviews will appear here once customers leave them.</p>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <p class="text-muted">
+            <em>You can add reviews from any product detail page.</em>
+        </p>
+    </div>
 </div>
-{% endfor %}
-
-<p><em>Add reviews from the product detail page.</em></p>
 {% endblock %}

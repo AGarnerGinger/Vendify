@@ -1,9 +1,133 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard - Vendify{% endblock %}
+
 {% block content %}
-<h2>Admin Dashboard</h2>
-<h3>All Users</h3>
-{% for user in users %}
-    <p>{{ user.username }} ({{ user.user_type }}) - {{ user.email }}</p>
-{% endfor %}
+<div class="container my-5">
+
+    <h1 class="mb-4 text-center">Admin Dashboard</h1>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-primary">
+                <div class="card-body">
+                    <h5 class="text-muted">Total Users</h5>
+                    <h2 class="text-primary">{{ users|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-success">
+                <div class="card-body">
+                    <h5 class="text-muted">Total Products</h5>
+                    <h2 class="text-success" id="total-products">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-warning">
+                <div class="card-body">
+                    <h5 class="text-muted">Pending Orders</h5>
+                    <h2 class="text-warning">12</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm border-danger">
+                <div class="card-body">
+                    <h5 class="text-muted">Open Complaints</h5>
+                    <h2 class="text-danger">3</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Users Section -->
+    <div class="card shadow mb-5">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">All Users</h4>
+            <a href="#" class="btn btn-sm btn-outline-light">Export Users</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>User Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td><strong>{{ user.username }}</strong></td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if user.user_type == 'admin' %}bg-danger
+                                    {% elif user.user_type == 'vendor' %}bg-success
+                                    {% else %}bg-primary{% endif %}">
+                                    {{ user.user_type|capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <a href="/products" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body text-center">
+                        <h5>Manage Products</h5>
+                        <p class="text-muted small">View, edit, or remove products</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/complaints" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body text-center">
+                        <h5>View Complaints</h5>
+                        <p class="text-muted small">Manage customer complaints</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a href="/chat" class="text-decoration-none">
+                <div class="card shadow-sm h-100 hover-card">
+                    <div class="card-body text-center">
+                        <h5>Admin Chat</h5>
+                        <p class="text-muted small">Message vendors or customers</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.hover-card {
+    transition: all 0.3s ease;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+}
+</style>
+
 {% endblock %}

@@ -1,23 +1,66 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+{% block title %}Create Account - Vendify{% endblock %}
+
 {% block content %}
-<h2>Create Account</h2>
-<form method="POST">
-    <label>Username:</label><br>
-    <input type="text" name="username" required><br><br>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center">
+                    <h3 class="mb-0">Create Your Account</h3>
+                </div>
+                <div class="card-body p-4">
 
-    <label>Email:</label><br>
-    <input type="email" name="email" required><br><br>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Username</label>
+                            <input type="text" name="username" class="form-control"
+                                   placeholder="Choose a username" required>
+                        </div>
 
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email Address</label>
+                            <input type="email" name="email" class="form-control"
+                                   placeholder="your@email.com" required>
+                        </div>
 
-    <label>Account Type:</label><br>
-    <select name="user_type">
-        <option value="customer">Customer</option>
-        <option value="vendor">Vendor</option>
-    </select><br><br>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Password</label>
+                            <input type="password" name="password" class="form-control"
+                                   placeholder="Create a strong password" required>
+                        </div>
 
-    <button type="submit">Register</button>
-</form>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Account Type</label>
+                            <select name="user_type" class="form-select">
+                                <option value="customer">Customer (Shop & Buy)</option>
+                                <option value="vendor">Vendor (Sell Products)</option>
+                            </select>
+                            <small class="text-muted">You can change this later if needed.</small>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                Create Account
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="mb-1">Already have an account?</p>
+                        <a href="/login" class="text-decoration-none">Login here →</a>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Back to Home -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <a href="/" class="text-decoration-none">← Back to Home</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

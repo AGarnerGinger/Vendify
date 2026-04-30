@@ -1,15 +1,52 @@
 {% extends "base.html" %}
-{% block title %}My Orders{% endblock %}
+{% block title %}My Orders - Vendify{% endblock %}
+
 {% block content %}
-<h2>Your Orders</h2>
-{% if orders %}
-    {% for order in orders %}
-    <div style="border:1px solid #ccc; padding:10px; margin:10px;">
-        <p>Order #{{ order.order_id }} - Status: <strong>{{ order.status }}</strong></p>
-        <p>Total: ${{ order.total_amount }} | Date: {{ order.order_date }}</p>
-    </div>
-    {% endfor %}
-{% else %}
-    <p>No orders yet.</p>
-{% endif %}
+<div class="container my-5">
+    <h1 class="mb-4">My Orders</h1>
+
+    {% if orders %}
+        <div class="row">
+            {% for order in orders %}
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                        <div>
+                            <strong>Order #{{ order.order_id }}</strong>
+                            <small class="text-muted ms-3">
+                                {{ order.order_date.strftime('%B %d, %Y at %I:%M %p') if order.order_date else 'Recent' }}
+                            </small>
+                        </div>
+                        <span class="badge
+                            {% if order.status == 'completed' %}bg-success
+                            {% elif order.status == 'pending' %}bg-warning
+                            {% elif order.status == 'cancelled' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ order.status|capitalize }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Total Amount:</strong>
+                                <span class="fs-4 fw-bold text-success">${{ order.total_amount }}</span>
+                            </div>
+                            <a href="#" class="btn btn-outline-primary btn-sm">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <h4 class="text-muted">You haven't placed any orders yet.</h4>
+            <a href="/products" class="btn btn-primary btn-lg mt-3">
+                Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

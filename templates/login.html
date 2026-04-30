@@ -1,14 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Login{% endblock %}
+{% block title %}Login - Vendify{% endblock %}
+
 {% block content %}
-<h2>Login</h2>
-<form method="POST">
-    <label>Username or Email:</label><br>
-    <input type="text" name="username" required><br><br>
-    
-    <label>Password:</label><br>
-    <input type="password" name="password" required><br><br>
-    
-    <button type="submit">Login</button>
-</form>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">Welcome Back</h3>
+                </div>
+                <div class="card-body p-4">
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Username or Email</label>
+                            <input type="text" name="username" class="form-control"
+                                   placeholder="Enter username or email" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Password</label>
+                            <input type="password" name="password" class="form-control"
+                                   placeholder="Enter your password" required>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                Login
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="mb-1">Don't have an account?</p>
+                        <a href="/register" class="text-decoration-none">Create a new account →</a>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    <a href="/" class="text-decoration-none">← Back to Home</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

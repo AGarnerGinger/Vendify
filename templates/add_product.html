@@ -1,20 +1,59 @@
 {% extends "base.html" %}
-{% block title %}Add Product{% endblock %}
+{% block title %}Add New Product - Vendify{% endblock %}
+
 {% block content %}
-<h2>Add New Product</h2>
-<form method="POST">
-    <label>Title:</label><br>
-    <input type="text" name="title" required><br><br>
-    
-    <label>Price:</label><br>
-    <input type="number" step="0.01" name="price" required><br><br>
-    
-    <label>Inventory:</label><br>
-    <input type="number" name="inventory" required><br><br>
-    
-    <label>Description:</label><br>
-    <textarea name="description" rows="4" cols="50"></textarea><br><br>
-    
-    <button type="submit">Add Product</button>
-</form>
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Add New Product</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Product Title</label>
+                            <input type="text" name="title" class="form-control" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Regular Price ($)</label>
+                                <input type="number" step="0.01" name="price" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Sale Price ($)</label>
+                                <input type="number" step="0.01" name="sale_price" class="form-control"
+                                       placeholder="Leave empty if not on sale">
+                                <small class="text-muted">Optional - If filled, this will be shown as the current price</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Inventory / Stock</label>
+                            <input type="number" name="inventory" class="form-control" min="0" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Product Image</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
+                            <small class="text-muted">Recommended: JPG, PNG, WebP (max 5MB)</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea name="description" class="form-control" rows="5"
+                                      placeholder="Describe your product..."></textarea>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">Add Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
