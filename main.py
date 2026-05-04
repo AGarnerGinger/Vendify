@@ -13,7 +13,7 @@ UPLOAD_FOLDER = 'static/uploads/products'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -62,7 +62,7 @@ def register():
                 """), {"u": username, "e": email, "p": hashed, "t": user_type})
                 conn.commit()
 
-            flash("Registration successful! Please log in.", "success")
+            flash("Registration successful!", "success")
             return redirect(url_for('login'))
         except Exception:
             flash("Registration failed.", "danger")
@@ -84,9 +84,9 @@ def login():
                 session['user_type'] = user.user_type
                 return redirect(url_for('index'))
 
-            flash("Invalid username or password", "danger")
+            flash("Invalid credentials", "danger")
         except Exception:
-            flash("Login error occurred", "danger")
+            flash("Login error", "danger")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -94,7 +94,7 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# ====================== PUBLIC PRODUCTS ======================
+# ====================== PUBLIC ======================
 @app.route('/products')
 def products_page():
     search = request.args.get('search', '')
@@ -111,11 +111,11 @@ def product_detail(pid):
         product = conn.execute(text("SELECT * FROM products WHERE product_id = :id"), {"id": pid}).fetchone()
     return render_template('product_detail.html', product=product)
 
-# ====================== VENDOR SECTION ======================
+# ====================== VENDOR ======================
 @app.route('/vendor/products')
 def vendor_products():
     if session.get('user_type') != 'vendor':
-        flash("Unauthorized access", "danger")
+        flash("Unauthorized", "danger")
         return redirect(url_for('index'))
     with get_db() as conn:
         prods = conn.execute(text("SELECT * FROM products WHERE vendor_id = :vid"),
@@ -157,7 +157,7 @@ def add_product():
             flash("Product added successfully!", "success")
             return redirect(url_for('vendor_products'))
         except Exception as e:
-            flash(f"Error adding product: {str(e)}", "danger")
+            flash(f"Error: {str(e)}", "danger")
     return render_template('add_product.html')
 
 @app.route('/edit-product/<int:pid>', methods=['GET', 'POST'])
@@ -181,9 +181,8 @@ def edit_product(pid):
             with get_db() as conn:
                 if image_filename:
                     conn.execute(text("""
-                        UPDATE products 
-                        SET title=:t, price=:p, sale_price=:sp, inventory=:i, description=:d, image=:img
-                        WHERE product_id=:id AND vendor_id=:vid
+                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:i, 
+                        description=:d, image=:img WHERE product_id=:id AND vendor_id=:vid
                     """), {
                         "t": request.form['title'], "p": float(request.form['price']),
                         "sp": sale_price, "i": int(request.form.get('inventory', 0)),
@@ -192,19 +191,18 @@ def edit_product(pid):
                     })
                 else:
                     conn.execute(text("""
-                        UPDATE products 
-                        SET title=:t, price=:p, sale_price=:sp, inventory=:i, description=:d
-                        WHERE product_id=:id AND vendor_id=:vid
+                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:i, 
+                        description=:d WHERE product_id=:id AND vendor_id=:vid
                     """), {
                         "t": request.form['title'], "p": float(request.form['price']),
                         "sp": sale_price, "i": int(request.form.get('inventory', 0)),
                         "d": request.form.get('description', ''), "id": pid, "vid": session['user_id']
                     })
                 conn.commit()
-            flash("Product updated successfully!", "success")
+            flash("Product updated!", "success")
             return redirect(url_for('vendor_products'))
         except Exception as e:
-            flash(f"Error updating product: {str(e)}", "danger")
+            flash(f"Error updating: {str(e)}", "danger")
 
     with get_db() as conn:
         product = conn.execute(text("SELECT * FROM products WHERE product_id = :id AND vendor_id = :vid"),
@@ -231,8 +229,7 @@ def cart():
     with get_db() as conn:
         items = conn.execute(text("""
             SELECT c.*, p.title, p.price, p.sale_price, p.image 
-            FROM cart_items c 
-            JOIN products p ON c.product_id = p.product_id 
+            FROM cart_items c JOIN products p ON c.product_id = p.product_id 
             WHERE c.user_id = :uid
         """), {"uid": session['user_id']}).fetchall()
     total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
@@ -245,8 +242,7 @@ def add_to_cart(pid):
     with get_db() as conn:
         conn.execute(text("""
             INSERT INTO cart_items (user_id, product_id, quantity) 
-            VALUES (:uid, :pid, 1)
-            ON DUPLICATE KEY UPDATE quantity = quantity + 1
+            VALUES (:uid, :pid, 1) ON DUPLICATE KEY UPDATE quantity = quantity + 1
         """), {"uid": session['user_id'], "pid": pid})
         conn.commit()
     return jsonify({"success": True})
@@ -274,8 +270,7 @@ def checkout():
             with get_db() as conn:
                 items = conn.execute(text("""
                     SELECT c.product_id, c.quantity, p.price, p.sale_price 
-                    FROM cart_items c 
-                    JOIN products p ON c.product_id = p.product_id 
+                    FROM cart_items c JOIN products p ON c.product_id = p.product_id 
                     WHERE c.user_id = :uid
                 """), {"uid": session['user_id']}).fetchall()
 
@@ -287,22 +282,19 @@ def checkout():
                 """), {"uid": session['user_id'], "total": total})
                 order_id = result.lastrowid
 
-                # Reduce stock
                 for item in items:
                     conn.execute(text("UPDATE products SET inventory = inventory - :qty WHERE product_id = :pid"),
                                {"qty": item.quantity, "pid": item.product_id})
 
-                # Clear cart
                 conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid"), {"uid": session['user_id']})
                 conn.commit()
 
             flash(f"Order #{order_id} placed successfully!", "success")
             return redirect(url_for('my_orders'))
-        except Exception as e:
-            flash("Failed to place order. Please try again.", "danger")
+        except Exception:
+            flash("Failed to place order", "danger")
             return redirect(url_for('cart'))
 
-    # GET request
     with get_db() as conn:
         items = conn.execute(text("""
             SELECT c.*, p.title, p.price, p.sale_price, p.image 
@@ -321,7 +313,7 @@ def my_orders():
                             {"uid": session['user_id']}).fetchall()
     return render_template('orders.html', orders=orders)
 
-# ====================== CHAT (Fixed) ======================
+# ====================== CHAT ======================
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     if 'user_id' not in session:
@@ -346,7 +338,6 @@ def chat():
         except Exception:
             flash("Failed to send message", "danger")
 
-    # Load page
     with get_db() as conn:
         vendors = conn.execute(text("SELECT user_id, username FROM users WHERE user_type = 'vendor'")).fetchall()
         messages = conn.execute(text("""
@@ -377,7 +368,7 @@ def complaints_page():
                 "dt": request.form['demand_type']
             })
             conn.commit()
-        flash("Complaint submitted successfully!", "success")
+        flash("Complaint submitted!", "success")
         return redirect(url_for('complaints_page'))
 
     with get_db() as conn:
@@ -391,9 +382,46 @@ def admin_dashboard():
     if session.get('user_type') != 'admin':
         flash("Unauthorized", "danger")
         return redirect(url_for('index'))
+
     with get_db() as conn:
         users = conn.execute(text("SELECT * FROM users")).fetchall()
-    return render_template('admin_dashboard.html', users=users)
+        products = conn.execute(text("SELECT * FROM products")).fetchall()
+
+    return render_template('admin_dashboard.html', users=users, products=products)
+
+@app.route('/admin/products')
+def admin_products():
+    if session.get('user_type') != 'admin':
+        flash("Unauthorized", "danger")
+        return redirect(url_for('index'))
+
+    with get_db() as conn:
+        products = conn.execute(text("SELECT * FROM products ORDER BY product_id DESC")).fetchall()
+    return render_template('admin_products.html', products=products)
+
+@app.route('/admin/delete-product/<int:pid>')
+def admin_delete_product(pid):
+    if session.get('user_type') != 'admin':
+        flash("Unauthorized", "danger")
+        return redirect(url_for('index'))
+
+    with get_db() as conn:
+        conn.execute(text("DELETE FROM products WHERE product_id = :pid"), {"pid": pid})
+        conn.commit()
+    flash("Product deleted successfully.", "success")
+    return redirect(url_for('admin_products'))
+
+@app.route('/admin/delete-user/<int:uid>')
+def admin_delete_user(uid):
+    if session.get('user_type') != 'admin':
+        flash("Unauthorized", "danger")
+        return redirect(url_for('index'))
+
+    with get_db() as conn:
+        conn.execute(text("DELETE FROM users WHERE user_id = :uid"), {"uid": uid})
+        conn.commit()
+    flash("User deleted successfully.", "success")
+    return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)

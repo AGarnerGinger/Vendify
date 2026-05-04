@@ -111,9 +111,9 @@ function addToCart(id) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ Added to cart!');
+            alert('Added to cart!');
         } else if (data.error === "out_of_stock") {
-            alert('❌ Out of stock!');
+            alert('Out of stock!');
         } else {
             alert('Please log in to add items.');
         }
