@@ -17,55 +17,43 @@ body {
     line-height: 1.6;
 }
 
-h1, h2, h3, h4 {
+/* ==================== FORCE LINK COLORS ==================== */
+a, a:link, a:visited {
+    color: #333 !important;
+    text-decoration: none !important;
+}
+
+a:hover, a:focus {
+    color: #000 !important;
+    text-decoration: underline !important;
+}
+
+/* Make sure Bootstrap doesn't override admin/dashboard links */
+.card a,
+.card a:hover,
+.card a:link,
+.card a:visited {
+    color: #333 !important;
+    text-decoration: none !important;
+}
+
+/* Header links stay white */
+nav a,
+nav a:hover {
+    color: white !important;
+}
+
+/* Rest of your styles */
+h1, h2, h3, h4, h5 {
     font-weight: 600;
 }
 
-/* Header / Navigation */
+/* Header */
 header {
     background: var(--dark);
     color: white;
     padding: 1rem 0;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-nav a {
-    color: white;
-    margin: 0 15px;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-nav a:hover {
-    color: #60a5fa;
-}
-
-/* Hero */
-.hero {
-    height: 60vh;
-    min-height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: white;
-    position: relative;
-}
-
-.hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 1;
-}
-
-.hero > .container {
-    position: relative;
-    z-index: 2;
 }
 
 /* Product Cards */
@@ -105,20 +93,6 @@ nav a:hover {
     background-color: #15803d;
 }
 
-/* Sale Badge */
-.sale-badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: var(--danger);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    z-index: 10;
-}
-
 /* Floating Chat Button */
 #chat-button {
     position: fixed;
@@ -147,7 +121,8 @@ nav a:hover {
     .product-card {
         margin-bottom: 20px;
     }
-    
+
     .hero {
         height: 50vh;
-   
+    }
+}

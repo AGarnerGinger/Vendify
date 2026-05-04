@@ -7,47 +7,54 @@
 
     <div class="row g-4">
 
-        <!-- Quick Stats -->
+        <!-- Total Users -->
         <div class="col-md-4">
-            <div class="card text-center shadow border-primary">
+            <div class="card text-center shadow">
                 <div class="card-body">
                     <h5>Total Users</h5>
                     <h2 class="text-primary">{{ users|length }}</h2>
                 </div>
             </div>
         </div>
+
+        <!-- Total Products -->
         <div class="col-md-4">
-            <div class="card text-center shadow border-success">
+            <div class="card text-center shadow">
                 <div class="card-body">
                     <h5>Total Products</h5>
                     <h2 class="text-success">{{ products|length if products else 0 }}</h2>
                 </div>
             </div>
         </div>
+
+        <!-- Pending Complaints -->
         <div class="col-md-4">
-            <div class="card text-center shadow border-warning">
-                <div class="card-body">
-                    <h5>Pending Complaints</h5>
-                    <h2 class="text-warning">3</h2>
+            <a href="/complaints" class="text-decoration-none">
+                <div class="card text-center shadow border-warning h-100">
+                    <div class="card-body">
+                        <h5>Pending Complaints</h5>
+                        <h2 class="text-warning">{{ pending_complaints|length if pending_complaints else 0 }}</h2>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
+
     </div>
 
     <div class="row mt-5">
         <!-- Manage Products -->
         <div class="col-md-6 mb-4">
-            <div class="card shadow h-100">
-                <div class="card-header bg-dark text-white">
-                    <h5>Manage Products</h5>
+            <a href="/admin/products" class="text-decoration-none">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-dark text-white">
+                        <h5>Manage Products</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="text-muted">View, edit, and delete all products in the marketplace.</p>
+                        <button class="btn btn-primary btn-lg">Go to Product Management</button>
+                    </div>
                 </div>
-                <div class="card-body text-center">
-                    <p class="text-muted">View, edit, and delete all products in the marketplace.</p>
-                    <a href="/admin/products" class="btn btn-primary btn-lg">
-                        Go to Product Management
-                    </a>
-                </div>
-            </div>
+            </a>
         </div>
 
         <!-- Manage Users -->
@@ -72,7 +79,11 @@
                                 <tr>
                                     <td>{{ user.username }}</td>
                                     <td>{{ user.email }}</td>
-                                    <td><span class="badge bg-{{ 'danger' if user.user_type=='admin' else 'success' if user.user_type=='vendor' else 'primary' }}">{{ user.user_type }}</span></td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if user.user_type=='admin' else 'success' if user.user_type=='vendor' else 'primary' }}">
+                                            {{ user.user_type }}
+                                        </span>
+                                    </td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-danger"
                                                 onclick="if(confirm('Delete user {{ user.username }}?')) window.location='/admin/delete-user/{{ user.user_id }}'">
@@ -89,4 +100,19 @@
         </div>
     </div>
 </div>
+
+<!-- Clean link styling -->
+<style>
+    a.text-decoration-none,
+    a.text-decoration-none:hover {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.12) !important;
+    }
+</style>
+
 {% endblock %}
