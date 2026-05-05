@@ -32,7 +32,7 @@
                                     <a class="nav-link" href="/admin">Admin Panel</a>
                                 </li>
                             {% else %}
-                                <!-- Regular Users / Vendors -->
+                                <!-- Customers / Vendors -->
                                 <li class="nav-item">
                                     <a class="nav-link" href="/products">Shop</a>
                                 </li>
@@ -63,7 +63,7 @@
         </nav>
     </header>
 
-    <!-- Flash Messages -->
+    <!-- Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -76,7 +76,7 @@
 
     {% block content %}{% endblock %}
 
-    <!-- Floating Chat Button (only for logged in users) -->
+    <!-- Floating Chat Button -->
     {% if session.user_id and session.user_type != 'admin' %}
     <button id="chat-button" onclick="window.location.href='/chat'" title="Open Messages">
         💬

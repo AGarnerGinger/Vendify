@@ -8,7 +8,7 @@ import datetime
 app = Flask(__name__)
 app.secret_key = "vendify-sec-key"
 
-# ====================== CONFIG ======================
+#config
 UPLOAD_FOLDER = 'static/uploads/products'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -17,7 +17,7 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# DATABASE
+#database
 engine = create_engine(
     "mysql+pymysql://root:cset155@localhost/multi_vendor_ecommerce",
     echo=False,
@@ -30,7 +30,7 @@ def get_db():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ====================== ROUTES ======================
+#routes
 
 @app.route('/')
 def index():
@@ -39,7 +39,7 @@ def index():
         on_sale = conn.execute(text("SELECT * FROM products WHERE sale_price IS NOT NULL LIMIT 6")).fetchall()
     return render_template('index.html', products=featured, on_sale=on_sale)
 
-# ====================== AUTH ======================
+#register
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -68,6 +68,7 @@ def register():
             flash("Registration failed.", "danger")
     return render_template('register.html')
 
+#login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -89,12 +90,13 @@ def login():
             flash("Login error", "danger")
     return render_template('login.html')
 
+#logout
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
 
-# ====================== PUBLIC PRODUCTS ======================
+#product(customer side)
 @app.route('/products')
 def products_page():
     search = request.args.get('search', '')
@@ -111,7 +113,7 @@ def product_detail(pid):
         product = conn.execute(text("SELECT * FROM products WHERE product_id = :id"), {"id": pid}).fetchone()
     return render_template('product_detail.html', product=product)
 
-# ====================== VENDOR ======================
+#vendors
 @app.route('/vendor/products')
 def vendor_products():
     if session.get('user_type') != 'vendor':
@@ -122,6 +124,7 @@ def vendor_products():
                            {"vid": session['user_id']}).fetchall()
     return render_template('vendor_products.html', products=prods)
 
+#add products
 @app.route('/add-product', methods=['GET', 'POST'])
 def add_product():
     if session.get('user_type') != 'vendor':
@@ -160,6 +163,7 @@ def add_product():
             flash(f"Error adding product: {str(e)}", "danger")
     return render_template('add_product.html')
 
+#edit products
 @app.route('/edit-product/<int:pid>', methods=['GET', 'POST'])
 def edit_product(pid):
     if session.get('user_type') != 'vendor':
@@ -209,6 +213,7 @@ def edit_product(pid):
                              {"id": pid, "vid": session['user_id']}).fetchone()
     return render_template('edit_product.html', product=product)
 
+#delete products
 @app.route('/delete-product/<int:pid>')
 def delete_product(pid):
     if session.get('user_type') != 'vendor':
@@ -221,7 +226,7 @@ def delete_product(pid):
     flash("Product deleted", "success")
     return redirect(url_for('vendor_products'))
 
-# ====================== CART ======================
+#cart
 @app.route('/cart')
 def cart():
     if 'user_id' not in session:
@@ -235,6 +240,7 @@ def cart():
     total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
     return render_template('cart.html', items=items, total=total)
 
+#cart add
 @app.route('/cart/add/<int:pid>', methods=['POST'])
 def add_to_cart(pid):
     if 'user_id' not in session:
@@ -247,6 +253,7 @@ def add_to_cart(pid):
         conn.commit()
     return jsonify({"success": True})
 
+#cart remove
 @app.route('/cart/remove/<int:pid>', methods=['POST'])
 def remove_from_cart(pid):
     if 'user_id' not in session:
@@ -259,7 +266,7 @@ def remove_from_cart(pid):
         conn.commit()
     return jsonify({"success": True})
 
-# ====================== CHECKOUT & ORDERS ======================
+#checkout
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
     if 'user_id' not in session:
@@ -304,6 +311,7 @@ def checkout():
     total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
     return render_template('checkout.html', items=items, total=total)
 
+#orders
 @app.route('/orders')
 def my_orders():
     if 'user_id' not in session:
@@ -313,7 +321,7 @@ def my_orders():
                             {"uid": session['user_id']}).fetchall()
     return render_template('orders.html', orders=orders)
 
-# ====================== CHAT ======================
+#chat
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     if 'user_id' not in session:
@@ -350,7 +358,7 @@ def chat():
 
     return render_template('chat.html', vendors=vendors, messages=messages)
 
-# ====================== COMPLAINTS ======================
+#complaints
 @app.route('/complaints', methods=['GET', 'POST'])
 def complaints_page():
     if 'user_id' not in session:
@@ -401,7 +409,7 @@ def complaints_page():
                                 {"uid": session['user_id']}).fetchall()
     return render_template('complaints.html', complaints=complaints, is_admin=False)
 
-# ====================== ADMIN ======================
+#admin dashboard
 @app.route('/admin')
 def admin_dashboard():
     if session.get('user_type') != 'admin':
@@ -420,6 +428,7 @@ def admin_dashboard():
                            complaints=complaints,
                            pending_complaints=pending_complaints)
 
+#admin products
 @app.route('/admin/products')
 def admin_products():
     if session.get('user_type') != 'admin':
@@ -430,6 +439,7 @@ def admin_products():
         products = conn.execute(text("SELECT * FROM products ORDER BY product_id DESC")).fetchall()
     return render_template('admin_products.html', products=products)
 
+#admin delete products
 @app.route('/admin/delete-product/<int:pid>')
 def admin_delete_product(pid):
     if session.get('user_type') != 'admin':
@@ -442,6 +452,7 @@ def admin_delete_product(pid):
     flash("Product deleted successfully.", "success")
     return redirect(url_for('admin_products'))
 
+#admin delete user
 @app.route('/admin/delete-user/<int:uid>')
 def admin_delete_user(uid):
     if session.get('user_type') != 'admin':
