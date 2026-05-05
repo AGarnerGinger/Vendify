@@ -2,6 +2,7 @@
 {% block title %}Vendify - Marketplace{% endblock %}
 
 {% block content %}
+<link href="{{ url_for('static', filename='static/css/index.css') }}" rel="stylesheet">
 
 <!-- Hero Section -->
 <section class="hero text-center py-5 text-white" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.5)), url('https://source.unsplash.com/random/1600x900/?market') no-repeat center center/cover;">
@@ -29,7 +30,7 @@
 
     <!-- On Sale Section -->
     {% if on_sale and on_sale|length > 0 %}
-    <h2 class="mb-4 text-danger">🔥 On Sale Right Now</h2>
+    <h2 class="mb-4 text-danger">🔥On Sale Right Now🔥</h2>
     <div class="row g-4 mb-5">
         {% for p in on_sale %}
         <div class="col-md-4 col-lg-3">
