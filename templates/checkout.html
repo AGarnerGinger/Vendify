@@ -29,10 +29,12 @@
                             </div>
                         </div>
 
+                        <!-- FIXED PRICE BLOCK -->
                         <div class="text-end">
                             {% if item.sale_price %}
                                 <div class="fw-bold text-danger">${{ item.sale_price }}</div>
                                 <small class="text-muted text-decoration-line-through">${{ item.price }}</small>
+                                <span class="badge bg-danger ms-1">SALE</span>
                             {% else %}
                                 <div class="fw-bold">${{ item.price }}</div>
                             {% endif %}

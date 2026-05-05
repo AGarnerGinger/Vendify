@@ -35,12 +35,11 @@
 
                             <div class="price mt-2">
                                 {% if item.sale_price %}
-                                    <span class="text-danger fs-5 fw-bold">${{ item.sale_price }}</span>
-                                    <span class="text-muted text-decoration-line-through ms-2">
-                                        ${{ item.price }}
-                                    </span>
+                                <span class="text-danger fs-5 fw-bold">${{ item.sale_price }}</span>
+                                <span class="text-muted text-decoration-line-through ms-2">${{ item.price }}</span>
+                                <span class="badge bg-danger ms-2">SALE</span>
                                 {% else %}
-                                    <span class="fs-5 fw-bold">${{ item.price }}</span>
+                                 <span class="fs-5 fw-bold">${{ item.price }}</span>
                                 {% endif %}
                                 <span class="text-muted">× {{ item.quantity }}</span>
                             </div>
