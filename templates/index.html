@@ -5,14 +5,16 @@
 <link href="{{ url_for('static', filename='static/css/index.css') }}" rel="stylesheet">
 
 <!-- Hero Section -->
-<section class="hero text-center py-5 text-white" style="background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.5)), url('https://source.unsplash.com/random/1600x900/?market') no-repeat center center/cover;">
+<section class="hero text-center py-5 text-white" style=" height: 90vh;
+background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.5)), url('{{ url_for('static', filename='uploads/products/1777924455_necklace1.png') }}') no-repeat center center/cover;">
+
     <div class="container">
         <h1 class="display-4 fw-bold mb-3">Welcome to Vendify</h1>
         <p class="lead mb-4">Shop unique products from trusted local vendors</p>
         <a href="/products" class="btn btn-light btn-lg px-5">Start Shopping</a>
-
-    </div>
+  </div>
 </section>
+
 
 <div class="container my-5">
 
