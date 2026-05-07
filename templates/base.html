@@ -13,6 +13,7 @@
 <body>
     <!-- Navigation -->
     <header>
+        {% if request.path == '/' %}
         <nav class="glass-nav">
             <div class="container-fluid custom-nav-container">
                 <a class="nav-logo" href="/">Vendify</a>
@@ -25,6 +26,8 @@
     <li><a href="/">Home</a></li>
 
     <li><a href="/products">Shop</a></li>
+
+    <li><a href="/cart">Cart</a></li>
 
     {% if session.user_id %}
 
@@ -109,6 +112,74 @@
 
 
     </header>
+{% endif %}
+
+    {% if request.path != '/' %}
+
+<header>
+
+    <nav class="normal-nav">
+
+        <div class="normal-nav-container">
+
+            <a href="/" class="normal-logo">
+                Vendify
+            </a>
+
+            <div class="normal-links">
+
+                <a href="/">Home</a>
+
+                <a href="/products">Shop</a>
+
+                <a href="/cart">Cart</a>
+                {% if session.user_id %}
+
+                    <a href="/orders">
+                        Orders
+                    </a>
+
+                    <a href="/chat">
+                        Messages
+                    </a>
+
+                    {% if session.user_type == 'admin' %}
+                    <a href="/admin">
+                        Admin
+                    </a>
+                    {% endif %}
+
+                    {% if session.user_type == 'vendor' %}
+                    <a href="/vendor/products">
+                        My Products
+                    </a>
+                    {% endif %}
+
+                    <a href="/logout">
+                        Logout
+                    </a>
+
+                {% else %}
+
+                    <a href="/login">
+                        Login
+                    </a>
+
+                    <a href="/register">
+                        Register
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </nav>
+
+</header>
+
+{% endif %}
 
     <!-- Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}

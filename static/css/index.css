@@ -24,6 +24,14 @@ body{
     object-fit: cover;
 }
 
+.small-hero video{
+
+    object-fit: contain;
+    transform: scale(1.25);
+    background: black;
+    width: 125%
+}
+
 .video-overlay{
     position: absolute;
     inset: 0;
@@ -53,7 +61,7 @@ body{
 .hero-btn{
     display: inline-block;
     padding: 15px 35px;
-    background: white;
+    background: grey;
     color: black;
     text-decoration: none;
     border-radius: 50px;
@@ -64,6 +72,7 @@ body{
 .hero-btn:hover{
     transform: scale(1.05);
 }
+
 
 /* SEARCH */
 
@@ -177,7 +186,7 @@ body{
 }
 
 .details-btn{
-    background: white;
+    background: grey;
     color: black;
 }
 
@@ -237,7 +246,7 @@ body{
 
     background: #ffcade;
 
-    color: black;
+    color: white;
 
     border-radius: 50px;
 
@@ -269,7 +278,7 @@ body{
 
     padding: 15px 35px;
 
-    background: white;
+    background: pink;
 
     color: black;
 
