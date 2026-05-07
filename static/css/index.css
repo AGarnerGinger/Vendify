@@ -205,3 +205,107 @@ body{
     }
 
 }
+
+/* MOTHER'S DAY SECTION */
+
+.mothers-day-banner{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 50px;
+
+    padding: 80px 8%;
+
+    background: linear-gradient(
+        to right,
+        #120909,
+        #1d1111
+    );
+
+    overflow: hidden;
+}
+
+.mothers-content{
+    max-width: 550px;
+}
+
+.mothers-tag{
+    display: inline-block;
+
+    padding: 10px 18px;
+
+    background: #ffcade;
+
+    color: black;
+
+    border-radius: 50px;
+
+    font-size: 14px;
+
+    margin-bottom: 20px;
+
+    font-weight: bold;
+}
+
+.mothers-content h2{
+    font-size: 52px;
+
+    line-height: 1.1;
+
+    margin-bottom: 20px;
+}
+
+.mothers-content p{
+    color: rgba(255,255,255,0.75);
+
+    font-size: 18px;
+
+    margin-bottom: 35px;
+}
+
+.mothers-btn{
+    display: inline-block;
+
+    padding: 15px 35px;
+
+    background: white;
+
+    color: black;
+
+    border-radius: 50px;
+
+    text-decoration: none;
+
+    font-weight: bold;
+
+    transition: 0.3s ease;
+}
+
+.mothers-btn:hover{
+    transform: scale(1.05);
+}
+
+.mothers-image img{
+    width: 860px;
+
+    max-width: 100%;
+
+    border-radius: 36px;
+}
+
+/* MOBILE */
+
+@media(max-width: 900px){
+
+    .mothers-day-banner{
+        flex-direction: column;
+
+        text-align: center;
+    }
+
+    .mothers-content h2{
+        font-size: 38px;
+    }
+
+}

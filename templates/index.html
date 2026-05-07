@@ -42,23 +42,38 @@
     </div>
 
 </section>
+<!-- MOTHER'S DAY SECTION -->
 
-<!-- SEARCH -->
-<section class="search-wrapper">
+<section class="mothers-day-banner">
 
-    <form action="/products" method="GET" class="search-bar">
+    <div class="mothers-content">
 
-        <input
-            type="text"
-            name="search"
-            placeholder="Search luxury jewelry..."
+        <span class="mothers-tag">
+            Mother's Day Collection
+        </span>
+
+        <h2>
+            Celebrate Mom With Timeless Jewelry
+        </h2>
+
+        <p>
+            Elegant gifts designed to shine forever.
+        </p>
+
+        <a href="/products" class="mothers-btn">
+            Shop Mother's Day
+        </a>
+
+    </div>
+
+    <div class="mothers-image">
+
+        <img
+            src="{{ url_for('static', filename='uploads/products/momBracelet.png') }}"
+            alt="Mother's Day Jewelry"
         >
 
-        <button type="submit">
-            Search
-        </button>
-
-    </form>
+    </div>
 
 </section>
 
@@ -67,7 +82,7 @@
 
     <div class="section-header">
         <p>Featured Collection</p>
-        <h2>Trending Jewelry</h2>
+        <h2>On Sale</h2>
     </div>
 
     <div class="product-grid">
