@@ -36,14 +36,18 @@ def allowed_file(filename):
 def index():
     with get_db() as conn:
         featured = conn.execute(text("""
-            SELECT * FROM products 
-            WHERE parent_product_id IS NULL 
-            ORDER BY product_id DESC LIMIT 8
+            SELECT p.*, u.username as vendor_name 
+            FROM products p 
+            JOIN users u ON p.vendor_id = u.user_id
+            WHERE p.parent_product_id IS NULL 
+            ORDER BY p.product_id DESC LIMIT 8
         """)).fetchall()
 
         on_sale = conn.execute(text("""
-            SELECT * FROM products 
-            WHERE parent_product_id IS NULL AND sale_price IS NOT NULL 
+            SELECT p.*, u.username as vendor_name 
+            FROM products p 
+            JOIN users u ON p.vendor_id = u.user_id
+            WHERE p.parent_product_id IS NULL AND p.sale_price IS NOT NULL 
             LIMIT 6
         """)).fetchall()
     return render_template('index.html', products=featured, on_sale=on_sale)
@@ -107,26 +111,65 @@ def logout():
 @app.route('/products')
 def products_page():
     search = request.args.get('search', '')
+    vendor_filter = request.args.get('vendor_id', type=int)
+    sort_by = request.args.get('sort', 'newest')
+
     with get_db() as conn:
+        # Get vendors for filter dropdown
+        vendors = conn.execute(text("""
+            SELECT user_id, username 
+            FROM users 
+            WHERE user_type = 'vendor'
+            ORDER BY username
+        """)).fetchall()
+
+        query = """
+            SELECT p.*, u.username as vendor_name 
+            FROM products p 
+            JOIN users u ON p.vendor_id = u.user_id
+            WHERE p.parent_product_id IS NULL
+        """
+        params = {}
+
         if search:
-            prods = conn.execute(text("""
-                SELECT * FROM products 
-                WHERE parent_product_id IS NULL 
-                  AND title LIKE :s
-            """), {"s": f"%{search}%"}).fetchall()
-        else:
-            prods = conn.execute(text("""
-                SELECT * FROM products 
-                WHERE parent_product_id IS NULL
-            """)).fetchall()
-    return render_template('products.html', products=prods)
+            query += " AND p.title LIKE :s"
+            params["s"] = f"%{search}%"
+
+        if vendor_filter:
+            query += " AND p.vendor_id = :vid"
+            params["vid"] = vendor_filter
+
+        # MySQL-compatible sorting (NULL sale_price last)
+        if sort_by == 'price_low':
+            query += " ORDER BY p.sale_price IS NULL, p.sale_price ASC, p.price ASC"
+        elif sort_by == 'price_high':
+            query += " ORDER BY p.sale_price IS NULL DESC, p.sale_price DESC, p.price DESC"
+        elif sort_by == 'vendor':
+            query += " ORDER BY u.username ASC"
+        else:  # newest (default)
+            query += " ORDER BY p.product_id DESC"
+
+        prods = conn.execute(text(query), params).fetchall()
+
+    return render_template('products.html',
+                           products=prods,
+                           vendors=vendors,
+                           search=search,
+                           vendor_filter=vendor_filter,
+                           sort_by=sort_by)
+
+@app.route('/product/<int:pid>')
 
 @app.route('/product/<int:pid>')
 def product_detail(pid):
     with get_db() as conn:
-        # Main product
-        product = conn.execute(text("SELECT * FROM products WHERE product_id = :id"),
-                               {"id": pid}).fetchone()
+        # Main product + vendor
+        product = conn.execute(text("""
+            SELECT p.*, u.username as vendor_name 
+            FROM products p 
+            JOIN users u ON p.vendor_id = u.user_id
+            WHERE p.product_id = :id
+        """), {"id": pid}).fetchone()
 
         # Variants + base product
         variants = conn.execute(text("""
@@ -136,7 +179,54 @@ def product_detail(pid):
             ORDER BY variant_name IS NULL DESC, variant_name
         """), {"pid": pid}).fetchall()
 
-    return render_template('product_detail.html', product=product, variants=variants)
+        # REVIEWS (already there from previous fix)
+        reviews = conn.execute(text("""
+            SELECT r.*, u.username 
+            FROM reviews r
+            JOIN users u ON r.user_id = u.user_id
+            WHERE r.product_id = :pid
+            ORDER BY r.created_at DESC
+        """), {"pid": pid}).fetchall()
+
+    return render_template('product_detail.html',
+                           product=product,
+                           variants=variants,
+                           reviews=reviews)
+
+#============== REVIEWS ===============
+
+@app.route('/review/<int:pid>', methods=['POST'])
+def submit_review(pid):
+    if 'user_id' not in session:
+        flash("You must be logged in to leave a review.", "danger")
+        return redirect(url_for('product_detail', pid=pid))
+
+    try:
+        rating = int(request.form.get('rating'))
+        description = request.form.get('description', '').strip()
+
+        if not (1 <= rating <= 5) or not description:
+            flash("Please provide a valid rating and review text.", "danger")
+            return redirect(url_for('product_detail', pid=pid))
+
+        with get_db() as conn:
+            conn.execute(text("""
+                INSERT INTO reviews (product_id, user_id, rating, description)
+                VALUES (:pid, :uid, :rating, :desc)
+            """), {
+                "pid": pid,
+                "uid": session['user_id'],
+                "rating": rating,
+                "desc": description
+            })
+            conn.commit()
+
+        flash("Thank you! Your review has been posted.", "success")
+    except Exception as e:
+        print("Review error:", e)
+        flash("Failed to post review.", "danger")
+
+    return redirect(url_for('product_detail', pid=pid))
 
 
 # ====================== VENDOR ======================
@@ -424,7 +514,7 @@ def chat():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    # Get selected vendor from URL query string (e.g. /chat?vendor_id=5)
+    uid = session['user_id']
     selected_vendor_id = request.args.get('vendor_id', type=int)
 
     if request.method == 'POST':
@@ -437,47 +527,68 @@ def chat():
                         INSERT INTO messages (sender_id, receiver_id, message_text, sent_at)
                         VALUES (:sender, :receiver, :msg, NOW())
                     """), {
-                        "sender": session['user_id'],
+                        "sender": uid,
                         "receiver": receiver_id,
                         "msg": message_text
                     })
                     conn.commit()
-                flash("Message sent!", "success")
-                # Stay in the same conversation after sending
+                # Refresh the same conversation
                 return redirect(url_for('chat', vendor_id=receiver_id))
         except Exception as e:
-            print("Chat send error:", str(e))
+            print("Chat error:", e)
             flash("Failed to send message", "danger")
-            if selected_vendor_id:
-                return redirect(url_for('chat', vendor_id=selected_vendor_id))
 
+    # GET - load page
     with get_db() as conn:
-        # All vendors (for the sidebar)
-        vendors = conn.execute(text("SELECT user_id, username FROM users WHERE user_type = 'vendor'")).fetchall()
+        if session.get('user_type') == 'customer':
+            conversations = []
+            vendors = conn.execute(text("""
+                SELECT user_id, username 
+                FROM users 
+                WHERE user_type = 'vendor' AND user_id != :uid
+            """), {"uid": uid}).fetchall()
+        else:
+            conversations = conn.execute(text("""
+                WITH conv AS (
+                    SELECT 
+                        CASE WHEN sender_id = :uid THEN receiver_id ELSE sender_id END as partner_id,
+                        MAX(sent_at) as last_at,
+                        (SELECT sender_id FROM messages m2 
+                         WHERE ((m2.sender_id = :uid AND m2.receiver_id = partner_id) 
+                            OR (m2.sender_id = partner_id AND m2.receiver_id = :uid))
+                         ORDER BY m2.sent_at DESC LIMIT 1) != :uid as has_unread
+                    FROM messages 
+                    WHERE sender_id = :uid OR receiver_id = :uid
+                    GROUP BY partner_id
+                )
+                SELECT 
+                    c.partner_id as user_id,
+                    u.username,
+                    c.last_at,
+                    c.has_unread
+                FROM conv c
+                JOIN users u ON u.user_id = c.partner_id
+                ORDER BY c.last_at DESC
+            """), {"uid": uid}).fetchall()
+            vendors = []
 
-        # Messages for the selected vendor only (chronological order)
+        messages = []
         if selected_vendor_id:
             messages = conn.execute(text("""
                 SELECT m.*, u.username as other_user 
                 FROM messages m
-                JOIN users u ON (
-                    CASE 
-                        WHEN m.sender_id = :uid THEN m.receiver_id 
-                        ELSE m.sender_id 
-                    END
-                ) = u.user_id
+                JOIN users u ON (CASE WHEN m.sender_id = :uid THEN m.receiver_id 
+                                     ELSE m.sender_id END) = u.user_id
                 WHERE ((m.sender_id = :uid AND m.receiver_id = :vid) 
                    OR (m.sender_id = :vid AND m.receiver_id = :uid))
                 ORDER BY m.sent_at ASC
-            """), {"uid": session['user_id'], "vid": selected_vendor_id}).fetchall()
-        else:
-            # No vendor selected yet → show empty or recent messages
-            messages = []
+            """), {"uid": uid, "vid": selected_vendor_id}).fetchall()
 
     return render_template('chat.html',
-                           vendors=vendors,
+                           conversations=conversations,
                            messages=messages,
-                           selected_vendor_id=selected_vendor_id)
+                           selected_vendor_id=selected_vendor_id,
+                           vendors=vendors)
 
 # ====================== COMPLAINTS ======================
 @app.route('/complaints', methods=['GET', 'POST'])
