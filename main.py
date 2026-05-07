@@ -13,35 +13,40 @@ UPLOAD_FOLDER = 'static/uploads/products'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ====================== DATABASE ======================
+# DATABASE
 engine = create_engine(
     "mysql+pymysql://root:DevonCSET155@localhost/multi_vendor_ecommerce",
     echo=False,
     pool_pre_ping=True
 )
 
-
 def get_db():
     return engine.connect()
 
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 # ====================== ROUTES ======================
 
 @app.route('/')
 def index():
     with get_db() as conn:
-        featured = conn.execute(text("SELECT * FROM products ORDER BY product_id DESC LIMIT 8")).fetchall()
-        on_sale = conn.execute(text("SELECT * FROM products WHERE sale_price IS NOT NULL LIMIT 6")).fetchall()
-    return render_template('index.html', products=featured, on_sale=on_sale)
+        featured = conn.execute(text("""
+            SELECT * FROM products 
+            WHERE parent_product_id IS NULL 
+            ORDER BY product_id DESC LIMIT 8
+        """)).fetchall()
 
+        on_sale = conn.execute(text("""
+            SELECT * FROM products 
+            WHERE parent_product_id IS NULL AND sale_price IS NOT NULL 
+            LIMIT 6
+        """)).fetchall()
+    return render_template('index.html', products=featured, on_sale=on_sale)
 
 # ====================== AUTH ======================
 @app.route('/register', methods=['GET', 'POST'])
@@ -55,7 +60,7 @@ def register():
 
             with get_db() as conn:
                 if conn.execute(text("SELECT 1 FROM users WHERE username=:u OR email=:e"),
-                                {"u": username, "e": email}).fetchone():
+                               {"u": username, "e": email}).fetchone():
                     flash("Username or Email already taken!", "danger")
                     return redirect(url_for('register'))
 
@@ -72,7 +77,6 @@ def register():
             flash("Registration failed.", "danger")
     return render_template('register.html')
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -81,7 +85,7 @@ def login():
             pw = request.form['password']
             with get_db() as conn:
                 user = conn.execute(text("SELECT * FROM users WHERE username = :c OR email = :c"),
-                                    {"c": cred}).fetchone()
+                                  {"c": cred}).fetchone()
 
             if user and check_password_hash(user.password_hash, pw):
                 session['user_id'] = user.user_id
@@ -94,34 +98,48 @@ def login():
             flash("Login error", "danger")
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
 
-
-# ====================== PRODUCT (CUSTOMER SIDE) ======================
+# ====================== PUBLIC PRODUCTS ======================
 @app.route('/products')
 def products_page():
     search = request.args.get('search', '')
     with get_db() as conn:
         if search:
-            prods = conn.execute(text("SELECT * FROM products WHERE title LIKE :s"), {"s": f"%{search}%"}).fetchall()
+            prods = conn.execute(text("""
+                SELECT * FROM products 
+                WHERE parent_product_id IS NULL 
+                  AND title LIKE :s
+            """), {"s": f"%{search}%"}).fetchall()
         else:
-            prods = conn.execute(text("SELECT * FROM products")).fetchall()
+            prods = conn.execute(text("""
+                SELECT * FROM products 
+                WHERE parent_product_id IS NULL
+            """)).fetchall()
     return render_template('products.html', products=prods)
-
 
 @app.route('/product/<int:pid>')
 def product_detail(pid):
     with get_db() as conn:
-        product = conn.execute(text("SELECT * FROM products WHERE product_id = :id"), {"id": pid}).fetchone()
-        variants = conn.execute(text("SELECT * FROM product_variants WHERE product_id = :id"), {"id": pid}).fetchall()
+        # Main product
+        product = conn.execute(text("SELECT * FROM products WHERE product_id = :id"),
+                               {"id": pid}).fetchone()
+
+        # Variants + base product
+        variants = conn.execute(text("""
+            SELECT * FROM products 
+            WHERE (parent_product_id = :pid OR product_id = :pid)
+              AND (variant_name IS NOT NULL OR product_id = :pid)
+            ORDER BY variant_name IS NULL DESC, variant_name
+        """), {"pid": pid}).fetchall()
+
     return render_template('product_detail.html', product=product, variants=variants)
 
 
-# ====================== VENDORS ======================
+# ====================== VENDOR ======================
 @app.route('/vendor/products')
 def vendor_products():
     if session.get('user_type') != 'vendor':
@@ -129,11 +147,9 @@ def vendor_products():
         return redirect(url_for('index'))
     with get_db() as conn:
         prods = conn.execute(text("SELECT * FROM products WHERE vendor_id = :vid"),
-                             {"vid": session['user_id']}).fetchall()
+                           {"vid": session['user_id']}).fetchall()
     return render_template('vendor_products.html', products=prods)
 
-
-# ====================== ADD PRODUCT ======================
 @app.route('/add-product', methods=['GET', 'POST'])
 def add_product():
     if session.get('user_type') != 'vendor':
@@ -142,7 +158,7 @@ def add_product():
 
     if request.method == 'POST':
         try:
-            # Main product image (fallback)
+            # Main product image
             main_image = None
             image = request.files.get('main_image')
             if image and image.filename and allowed_file(image.filename):
@@ -154,9 +170,10 @@ def add_product():
             sale_price = float(sale_price) if sale_price and sale_price.strip() else None
 
             with get_db() as conn:
+                # Create the MAIN product
                 result = conn.execute(text("""
-                    INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id)
-                    VALUES (:t, :p, :sp, 0, :d, :img, :v)
+                    INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
+                    VALUES (:t, :p, :sp, 0, :d, :img, :v, NULL, NULL)
                 """), {
                     "t": request.form['title'],
                     "p": float(request.form['price']),
@@ -165,9 +182,9 @@ def add_product():
                     "img": main_image,
                     "v": session['user_id']
                 })
-                product_id = result.lastrowid
+                main_product_id = result.lastrowid
 
-                # Save variants
+                # Create each variant as a separate product row
                 variant_names = request.form.getlist('variant_name[]')
                 variant_prices = request.form.getlist('variant_price[]')
                 variant_images = request.files.getlist('variant_image[]')
@@ -175,89 +192,6 @@ def add_product():
                 for i, name in enumerate(variant_names):
                     if name.strip():
                         v_price = float(variant_prices[i]) if variant_prices[i] and variant_prices[i].strip() else None
-                        v_image = None
-                        if i < len(variant_images) and variant_images[i].filename and allowed_file(
-                                variant_images[i].filename):
-                            fname = secure_filename(variant_images[i].filename)
-                            v_image = f"{int(datetime.datetime.now().timestamp())}_{fname}"
-                            variant_images[i].save(os.path.join(app.config['UPLOAD_FOLDER'], v_image))
-
-                        conn.execute(text("""
-                            INSERT INTO product_variants (product_id, variant_name, image, price, inventory)
-                            VALUES (:pid, :name, :img, :price, 10)
-                        """), {
-                            "pid": product_id,
-                            "name": name.strip(),
-                            "img": v_image,
-                            "price": v_price
-                        })
-                conn.commit()
-
-            flash("Product with variants added successfully!", "success")
-            return redirect(url_for('vendor_products'))
-        except Exception as e:
-            flash(f"Error adding product: {str(e)}", "danger")
-    return render_template('add_product.html')
-
-
-# ====================== EDIT PRODUCT ======================
-@app.route('/edit-product/<int:pid>', methods=['GET', 'POST'])
-def edit_product(pid):
-    if session.get('user_type') != 'vendor':
-        flash("Unauthorized", "danger")
-        return redirect(url_for('index'))
-
-    if request.method == 'POST':
-        try:
-            # Main product image (optional)
-            main_image = None
-            image = request.files.get('main_image')
-            if image and image.filename and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                main_image = f"{int(datetime.datetime.now().timestamp())}_{filename}"
-                image.save(os.path.join(app.config['UPLOAD_FOLDER'], main_image))
-
-            sale_price = request.form.get('sale_price')
-            sale_price = float(sale_price) if sale_price and sale_price.strip() else None
-
-            with get_db() as conn:
-                # Update main product
-                if main_image:
-                    conn.execute(text("""
-                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:inv, description=:d, image=:img
-                        WHERE product_id=:id AND vendor_id=:vid
-                    """), {
-                        "t": request.form['title'], "p": float(request.form['price']),
-                        "sp": sale_price, "inv": int(request.form['inventory']),
-                        "d": request.form.get('description', ''), "img": main_image,
-                        "id": pid, "vid": session['user_id']
-                    })
-                else:
-                    conn.execute(text("""
-                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:inv, description=:d
-                        WHERE product_id=:id AND vendor_id=:vid
-                    """), {
-                        "t": request.form['title'], "p": float(request.form['price']),
-                        "sp": sale_price, "inv": int(request.form['inventory']),
-                        "d": request.form.get('description', ''), "id": pid, "vid": session['user_id']
-                    })
-
-                # Delete old variants and re-insert with ALL fields
-                conn.execute(text("DELETE FROM product_variants WHERE product_id = :pid"), {"pid": pid})
-
-                variant_names = request.form.getlist('variant_name[]')
-                variant_prices = request.form.getlist('variant_price[]')
-                variant_inventories = request.form.getlist('variant_inventory[]')
-                variant_sale_prices = request.form.getlist('variant_sale_price[]')
-                variant_descriptions = request.form.getlist('variant_description[]')
-                variant_images = request.files.getlist('variant_image[]')
-
-                for i, name in enumerate(variant_names):
-                    if name.strip():
-                        v_price = round(float(variant_prices[i]), 2) if variant_prices[i] and variant_prices[i].strip() else None
-                        v_inv = int(variant_inventories[i]) if variant_inventories[i] and variant_inventories[i].strip() else 10
-                        v_sale = round(float(variant_sale_prices[i]), 2) if i < len(variant_sale_prices) and variant_sale_prices[i] and variant_sale_prices[i].strip() else None
-                        v_desc = variant_descriptions[i] if i < len(variant_descriptions) else ''
 
                         v_image = None
                         if i < len(variant_images) and variant_images[i].filename and allowed_file(variant_images[i].filename):
@@ -266,58 +200,78 @@ def edit_product(pid):
                             variant_images[i].save(os.path.join(app.config['UPLOAD_FOLDER'], v_image))
 
                         conn.execute(text("""
-                            INSERT INTO product_variants 
-                            (product_id, variant_name, image, price, inventory, sale_price, description)
-                            VALUES (:pid, :name, :img, :price, :inv, :sale, :desc)
+                            INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
+                            VALUES (:t, :p, :sp, 10, :d, :img, :v, :vname, :parent)
                         """), {
-                            "pid": pid,
-                            "name": name.strip(),
-                            "img": v_image,
-                            "price": v_price,
-                            "inv": v_inv,
-                            "sale": v_sale,
-                            "desc": v_desc
+                            "t": request.form['title'],
+                            "p": v_price or float(request.form['price']),
+                            "sp": None,
+                            "d": request.form.get('description', ''),
+                            "img": v_image or main_image,
+                            "v": session['user_id'],
+                            "vname": name.strip(),
+                            "parent": main_product_id
                         })
+
                 conn.commit()
 
+            flash("Product and variants added successfully!", "success")
+            return redirect(url_for('vendor_products'))
+
+        except Exception as e:
+            flash(f"Error adding product: {str(e)}", "danger")
+
+    return render_template('add_product.html')
+
+@app.route('/edit-product/<int:pid>', methods=['GET', 'POST'])
+def edit_product(pid):
+    if session.get('user_type') != 'vendor':
+        flash("Unauthorized", "danger")
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        try:
+            image_filename = None
+            image = request.files.get('image')
+            if image and image.filename and allowed_file(image.filename):
+                filename = secure_filename(image.filename)
+                image_filename = f"{int(datetime.datetime.now().timestamp())}_{filename}"
+                image.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+
+            sale_price = request.form.get('sale_price')
+            sale_price = float(sale_price) if sale_price and sale_price.strip() else None
+
+            with get_db() as conn:
+                if image_filename:
+                    conn.execute(text("""
+                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:i, description=:d, image=:img
+                        WHERE product_id=:id AND vendor_id=:vid
+                    """), {
+                        "t": request.form['title'], "p": float(request.form['price']),
+                        "sp": sale_price, "i": int(request.form.get('inventory', 0)),
+                        "d": request.form.get('description', ''), "img": image_filename,
+                        "id": pid, "vid": session['user_id']
+                    })
+                else:
+                    conn.execute(text("""
+                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:i, description=:d
+                        WHERE product_id=:id AND vendor_id=:vid
+                    """), {
+                        "t": request.form['title'], "p": float(request.form['price']),
+                        "sp": sale_price, "i": int(request.form.get('inventory', 0)),
+                        "d": request.form.get('description', ''), "id": pid, "vid": session['user_id']
+                    })
+                conn.commit()
             flash("Product updated successfully!", "success")
             return redirect(url_for('vendor_products'))
         except Exception as e:
             flash(f"Error updating product: {str(e)}", "danger")
 
-    # GET request
     with get_db() as conn:
         product = conn.execute(text("SELECT * FROM products WHERE product_id = :id AND vendor_id = :vid"),
                              {"id": pid, "vid": session['user_id']}).fetchone()
-        variants = conn.execute(text("SELECT * FROM product_variants WHERE product_id = :pid"),
-                              {"pid": pid}).fetchall()
-    return render_template('edit_product.html', product=product, variants=variants)
+    return render_template('edit_product.html', product=product)
 
-# ====================== DELETE VARIANT ======================
-@app.route('/delete-variant/<int:vid>')
-def delete_variant(vid):
-    if session.get('user_type') != 'vendor':
-        flash("Unauthorized", "danger")
-        return redirect(url_for('index'))
-
-    with get_db() as conn:
-        # Make sure the variant belongs to this vendor
-        variant = conn.execute(text("""
-            SELECT pv.* FROM product_variants pv
-            JOIN products p ON pv.product_id = p.product_id
-            WHERE pv.variant_id = :vid AND p.vendor_id = :vid_user
-        """), {"vid": vid, "vid_user": session['user_id']}).fetchone()
-
-        if variant:
-            conn.execute(text("DELETE FROM product_variants WHERE variant_id = :vid"), {"vid": vid})
-            conn.commit()
-            flash("Variant deleted successfully.", "success")
-        else:
-            flash("Variant not found or unauthorized.", "danger")
-
-    return redirect(request.referrer or url_for('vendor_products'))
-
-# ====================== DELETE PRODUCT ======================
 @app.route('/delete-product/<int:pid>')
 def delete_product(pid):
     if session.get('user_type') != 'vendor':
@@ -325,27 +279,38 @@ def delete_product(pid):
         return redirect(url_for('index'))
     with get_db() as conn:
         conn.execute(text("DELETE FROM products WHERE product_id=:id AND vendor_id=:vid"),
-                     {"id": pid, "vid": session['user_id']})
+                   {"id": pid, "vid": session['user_id']})
         conn.commit()
     flash("Product deleted", "success")
     return redirect(url_for('vendor_products'))
-
 
 # ====================== CART ======================
 @app.route('/cart')
 def cart():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
     with get_db() as conn:
         items = conn.execute(text("""
-            SELECT c.*, p.title, p.price, p.sale_price, p.image, 
-                   v.variant_name, v.image as variant_image
-            FROM cart_items c 
-            JOIN products p ON c.product_id = p.product_id 
-            LEFT JOIN product_variants v ON c.variant_id = v.variant_id
+            SELECT 
+                c.*,
+                p.title,
+                p.price,
+                p.sale_price,
+                p.image,
+                p.variant_name,
+                p.parent_product_id
+            FROM cart_items c
+            JOIN products p ON c.product_id = p.product_id
             WHERE c.user_id = :uid
         """), {"uid": session['user_id']}).fetchall()
-    total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
+
+    # Calculate total
+    total = 0
+    for item in items:
+        price = float(item.sale_price) if item.sale_price else float(item.price)
+        total += price * item.quantity
+
     return render_template('cart.html', items=items, total=total)
 
 
@@ -357,55 +322,38 @@ def add_to_cart(pid):
     with get_db() as conn:
         try:
             conn.execute(text("""
-                INSERT INTO cart_items (user_id, product_id, quantity) 
-                VALUES (:uid, :pid, 1) 
+                INSERT INTO cart_items (user_id, product_id, quantity)
+                VALUES (:uid, :pid, 1)
                 ON DUPLICATE KEY UPDATE quantity = quantity + 1
             """), {"uid": session['user_id'], "pid": pid})
             conn.commit()
             return jsonify({"success": True})
         except Exception as e:
-            print("Cart error:", str(e))
+            print("Cart Error:", str(e))
             return jsonify({"error": str(e)}), 500
+
 
 @app.route('/cart/remove/<int:pid>', methods=['POST'])
 def remove_from_cart(pid):
     if 'user_id' not in session:
         return jsonify({"error": "login"}), 401
+
     with get_db() as conn:
-        conn.execute(text(
-            "UPDATE cart_items SET quantity = quantity - 1 WHERE user_id = :uid AND product_id = :pid AND quantity > 0"),
-                     {"uid": session['user_id'], "pid": pid})
-        conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid AND product_id = :pid AND quantity <= 0"),
-                     {"uid": session['user_id'], "pid": pid})
+        conn.execute(text("""
+            UPDATE cart_items 
+            SET quantity = quantity - 1 
+            WHERE user_id = :uid AND product_id = :pid AND quantity > 0
+        """), {"uid": session['user_id'], "pid": pid})
+
+        conn.execute(text("""
+            DELETE FROM cart_items 
+            WHERE user_id = :uid AND product_id = :pid AND quantity <= 0
+        """), {"uid": session['user_id'], "pid": pid})
+
         conn.commit()
     return jsonify({"success": True})
 
-
-# ====================== CART QUANTITY UPDATE ======================
-@app.route('/cart/update/<int:pid>', methods=['POST'])
-def update_cart_quantity(pid):
-    if 'user_id' not in session:
-        return jsonify({"error": "login"}), 401
-    try:
-        new_qty = int(request.form.get('quantity', 0))
-        if new_qty < 0:
-            new_qty = 0
-        with get_db() as conn:
-            if new_qty == 0:
-                conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid AND product_id = :pid"),
-                             {"uid": session['user_id'], "pid": pid})
-            else:
-                conn.execute(text("""
-                    UPDATE cart_items 
-                    SET quantity = :qty 
-                    WHERE user_id = :uid AND product_id = :pid
-                """), {"qty": new_qty, "uid": session['user_id'], "pid": pid})
-            conn.commit()
-        return jsonify({"success": True})
-    except Exception:
-        return jsonify({"error": "failed"}), 400
-
-
+# ====================== CHECKOUT & ORDERS ======================
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
     if 'user_id' not in session:
@@ -415,14 +363,12 @@ def checkout():
         try:
             with get_db() as conn:
                 items = conn.execute(text("""
-                    SELECT c.product_id, c.quantity, c.variant_id, p.price, p.sale_price 
+                    SELECT c.product_id, c.quantity, p.price, p.sale_price 
                     FROM cart_items c JOIN products p ON c.product_id = p.product_id 
                     WHERE c.user_id = :uid
                 """), {"uid": session['user_id']}).fetchall()
 
-                total = sum(
-                    (float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in
-                    items)
+                total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
 
                 result = conn.execute(text("""
                     INSERT INTO orders (user_id, total_amount, status, order_date)
@@ -432,7 +378,7 @@ def checkout():
 
                 for item in items:
                     conn.execute(text("UPDATE products SET inventory = inventory - :qty WHERE product_id = :pid"),
-                                 {"qty": item.quantity, "pid": item.product_id})
+                               {"qty": item.quantity, "pid": item.product_id})
 
                 conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid"), {"uid": session['user_id']})
                 conn.commit()
@@ -452,24 +398,20 @@ def checkout():
     total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
     return render_template('checkout.html', items=items, total=total)
 
-
 @app.route('/orders')
 def my_orders():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     with get_db() as conn:
         orders = conn.execute(text("SELECT * FROM orders WHERE user_id = :uid ORDER BY order_date DESC"),
-                              {"uid": session['user_id']}).fetchall()
+                            {"uid": session['user_id']}).fetchall()
     return render_template('orders.html', orders=orders)
-
 
 # ====================== CHAT ======================
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
-    selected_vendor_id = request.args.get('vendor_id')
 
     if request.method == 'POST':
         try:
@@ -487,36 +429,20 @@ def chat():
                     })
                     conn.commit()
                 flash("Message sent!", "success")
-                return redirect(url_for('chat', vendor_id=receiver_id))
         except Exception:
             flash("Failed to send message", "danger")
 
     with get_db() as conn:
         vendors = conn.execute(text("SELECT user_id, username FROM users WHERE user_type = 'vendor'")).fetchall()
+        messages = conn.execute(text("""
+            SELECT m.*, u.username as other_user 
+            FROM messages m
+            JOIN users u ON (CASE WHEN m.sender_id = :uid THEN m.receiver_id ELSE m.sender_id END) = u.user_id
+            WHERE m.sender_id = :uid OR m.receiver_id = :uid
+            ORDER BY m.sent_at DESC LIMIT 50
+        """), {"uid": session['user_id']}).fetchall()
 
-        if selected_vendor_id:
-            messages = conn.execute(text("""
-                SELECT m.*, u.username as other_user 
-                FROM messages m
-                JOIN users u ON (CASE WHEN m.sender_id = :uid THEN m.receiver_id ELSE m.sender_id END) = u.user_id
-                WHERE (m.sender_id = :uid AND m.receiver_id = :vid) 
-                   OR (m.sender_id = :vid AND m.receiver_id = :uid)
-                ORDER BY m.sent_at DESC
-            """), {"uid": session['user_id'], "vid": selected_vendor_id}).fetchall()
-        else:
-            messages = conn.execute(text("""
-                SELECT m.*, u.username as other_user 
-                FROM messages m
-                JOIN users u ON (CASE WHEN m.sender_id = :uid THEN m.receiver_id ELSE m.sender_id END) = u.user_id
-                WHERE m.sender_id = :uid OR m.receiver_id = :uid
-                ORDER BY m.sent_at DESC LIMIT 30
-            """), {"uid": session['user_id']}).fetchall()
-
-    return render_template('chat.html',
-                           vendors=vendors,
-                           messages=messages,
-                           selected_vendor_id=selected_vendor_id)
-
+    return render_template('chat.html', vendors=vendors, messages=messages)
 
 # ====================== COMPLAINTS ======================
 @app.route('/complaints', methods=['GET', 'POST'])
@@ -525,6 +451,7 @@ def complaints_page():
         return redirect(url_for('login'))
 
     if session.get('user_type') == 'admin':
+        # Admin can view all and update status
         if request.method == 'POST':
             try:
                 complaint_id = request.form.get('complaint_id')
@@ -532,7 +459,7 @@ def complaints_page():
                 if complaint_id and new_status:
                     with get_db() as conn:
                         conn.execute(text("UPDATE complaints SET status = :status WHERE complaint_id = :id"),
-                                     {"status": new_status, "id": complaint_id})
+                                   {"status": new_status, "id": complaint_id})
                         conn.commit()
                     flash("Complaint status updated.", "success")
             except Exception:
@@ -547,6 +474,7 @@ def complaints_page():
             """)).fetchall()
         return render_template('complaints.html', complaints=complaints, is_admin=True)
 
+    # Regular user
     if request.method == 'POST':
         with get_db() as conn:
             conn.execute(text("""
@@ -564,11 +492,10 @@ def complaints_page():
 
     with get_db() as conn:
         complaints = conn.execute(text("SELECT * FROM complaints WHERE user_id = :uid ORDER BY created_at DESC"),
-                                  {"uid": session['user_id']}).fetchall()
+                                {"uid": session['user_id']}).fetchall()
     return render_template('complaints.html', complaints=complaints, is_admin=False)
 
-
-# ====================== ADMIN DASHBOARD ======================
+# ====================== ADMIN ======================
 @app.route('/admin')
 def admin_dashboard():
     if session.get('user_type') != 'admin':
@@ -578,15 +505,15 @@ def admin_dashboard():
     with get_db() as conn:
         users = conn.execute(text("SELECT * FROM users")).fetchall()
         products = conn.execute(text("SELECT * FROM products")).fetchall()
+        complaints = conn.execute(text("SELECT * FROM complaints")).fetchall()
         pending_complaints = conn.execute(text("SELECT * FROM complaints WHERE status = 'pending'")).fetchall()
 
     return render_template('admin_dashboard.html',
                            users=users,
                            products=products,
+                           complaints=complaints,
                            pending_complaints=pending_complaints)
 
-
-# ====================== ADMIN PRODUCT MANAGEMENT ======================
 @app.route('/admin/products')
 def admin_products():
     if session.get('user_type') != 'admin':
@@ -596,7 +523,6 @@ def admin_products():
     with get_db() as conn:
         products = conn.execute(text("SELECT * FROM products ORDER BY product_id DESC")).fetchall()
     return render_template('admin_products.html', products=products)
-
 
 @app.route('/admin/delete-product/<int:pid>')
 def admin_delete_product(pid):
@@ -610,8 +536,6 @@ def admin_delete_product(pid):
     flash("Product deleted successfully.", "success")
     return redirect(url_for('admin_products'))
 
-
-# ====================== ADMIN USER MANAGEMENT ======================
 @app.route('/admin/delete-user/<int:uid>')
 def admin_delete_user(uid):
     if session.get('user_type') != 'admin':
@@ -623,7 +547,6 @@ def admin_delete_user(uid):
         conn.commit()
     flash("User deleted successfully.", "success")
     return redirect(url_for('admin_dashboard'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)

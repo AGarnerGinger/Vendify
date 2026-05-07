@@ -8,19 +8,23 @@
         <div class="col-lg-6">
             <div id="variantCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                    {% if product.image %}
-                    <div class="carousel-item active" data-variant="">
-                        <img src="{{ url_for('static', filename='uploads/products/' + product.image) }}"
+                    <!-- Base product image -->
+                    <div class="carousel-item active" data-variant="base">
+                        <img src="{{ url_for('static', filename='uploads/products/' + (product.image or 'default.jpg')) }}"
                              class="d-block w-100 rounded" style="max-height: 500px; object-fit: contain;">
                     </div>
-                    {% endif %}
+
+                    <!-- Variant images -->
                     {% for v in variants %}
-                    <div class="carousel-item" data-variant="{{ v.variant_id }}">
-                        <img src="{{ url_for('static', filename='uploads/products/' + (v.image or product.image)) }}"
-                             class="d-block w-100 rounded" style="max-height: 500px; object-fit: contain;">
-                    </div>
+                        {% if v.variant_name %}
+                        <div class="carousel-item" data-variant="{{ v.product_id }}">
+                            <img src="{{ url_for('static', filename='uploads/products/' + (v.image or product.image or 'default.jpg')) }}"
+                                 class="d-block w-100 rounded" style="max-height: 500px; object-fit: contain;">
+                        </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
+
                 <button class="carousel-control-prev" type="button" data-bs-target="#variantCarousel" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 </button>
@@ -34,111 +38,79 @@
         <div class="col-lg-6">
             <h1 class="mb-3">{{ product.title }}</h1>
 
-            <!-- Price Display -->
             <div id="price-display" class="mb-4">
                 {% if product.sale_price %}
-                    <h2 class="text-danger mb-1">
-                        ${{ product.sale_price }}
-                        <span class="text-muted text-decoration-line-through ms-2 fs-6">${{ product.price }}</span>
-                        <span class="badge bg-danger ms-2">SALE</span>
-                    </h2>
+                    <h2 class="text-danger mb-1">${{ product.sale_price }} <span class="text-muted text-decoration-line-through ms-2">${{ product.price }}</span></h2>
                 {% else %}
                     <h2 class="mb-1">${{ product.price }}</h2>
                 {% endif %}
             </div>
 
-            <!-- Variant Selector -->
-<div class="mb-4">
-    <label class="form-label fw-bold">Choose Variant</label>
-    <select id="variant-select" class="form-select" onchange="selectVariant()">
-        <option value="base">Base Product ({{ product.inventory }} in stock)</option>
-        {% for v in variants %}
-        <option value="{{ v.variant_id }}"
-                data-price="{{ v.price or product.price }}"
-                data-sale-price="{{ v.sale_price or '' }}"
-                data-stock="{{ v.inventory }}"
-                data-description="{{ v.description or product.description }}">
-            {{ v.variant_name }} ({{ v.inventory }} in stock)
-        </option>
-        {% endfor %}
-    </select>
-</div>
+            <!-- Variant Dropdown -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">Choose Variant</label>
+                <select id="variant-select" class="form-select" onchange="selectVariant()">
+                    <option value="{{ product.product_id }}"
+                            data-image="{{ product.image or 'default.jpg' }}">
+                        Base Product ({{ product.inventory }} in stock)
+                    </option>
+                    {% for v in variants %}
+                        {% if v.variant_name %}
+                        <option value="{{ v.product_id }}"
+                                data-image="{{ v.image or product.image or 'default.jpg' }}">
+                            {{ v.variant_name }} ({{ v.inventory }} in stock)
+                        </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
 
-            <!-- Description -->
             <div id="description-display" class="mb-4">
                 <h5>Description</h5>
-                <p>{{ product.description }}</p>
+                <p>{{ product.description or 'No description available.' }}</p>
             </div>
 
-            <div class="d-grid gap-2">
-                <button onclick="addToCartWithVariant()" class="btn btn-success btn-lg">Add to Cart</button>
-                <a href="/products" class="btn btn-outline-secondary">← Back to Shop</a>
-            </div>
+            <button onclick="addToCartWithVariant()" class="btn btn-success btn-lg w-100 mb-3">
+                Add to Cart
+            </button>
+            <a href="/products" class="btn btn-outline-secondary">← Back to Shop</a>
         </div>
     </div>
 </div>
 
-
 <script>
 function selectVariant() {
     const select = document.getElementById('variant-select');
-    const priceDisplay = document.getElementById('price-display');
-    const descDisplay = document.getElementById('description-display');
-    const carousel = document.getElementById('variantCarousel');
     const option = select.options[select.selectedIndex];
+    const variantId = option.value;
 
-    // Always reset to base product first
-    {% if product.sale_price %}
-        priceDisplay.innerHTML = '<h2 class="text-danger mb-1">$' + {{ product.sale_price }} + ' <span class="text-muted text-decoration-line-through ms-2 fs-6">$' + {{ product.price }} + '</span> <span class="badge bg-danger ms-2">SALE</span></h2>';
-    {% else %}
-        priceDisplay.innerHTML = '<h2 class="mb-1">$' + {{ product.price }} + '</h2>';
-    {% endif %}
-    descDisplay.innerHTML = '<h5>Description</h5><p>{{ product.description }}</p>';
-
-    // Reset carousel to first slide
-    const carouselInstance = bootstrap.Carousel.getOrCreateInstance(carousel);
-    carouselInstance.to(0);
-
-    // If a variant is selected, override
-    if (option.value !== "base") {
-        const price = option.dataset.price;
-        const salePrice = option.dataset.salePrice;
-        const description = option.dataset.description;
-
-        if (salePrice && salePrice !== '') {
-            priceDisplay.innerHTML = '<h2 class="text-danger mb-1">$' + salePrice + ' <span class="text-muted text-decoration-line-through ms-2 fs-6">$' + price + '</span> <span class="badge bg-danger ms-2">SALE</span></h2>';
-        } else {
-            priceDisplay.innerHTML = '<h2 class="mb-1">$' + price + '</h2>';
+    // Switch carousel to correct slide
+    const carousel = document.getElementById('variantCarousel');
+    const slides = carousel.querySelectorAll('.carousel-item');
+    slides.forEach((slide, index) => {
+        if (slide.dataset.variant === variantId || (variantId === "{{ product.product_id }}" && slide.dataset.variant === "base")) {
+            bootstrap.Carousel.getOrCreateInstance(carousel).to(index);
         }
-
-        descDisplay.innerHTML = '<h5>Description</h5><p>' + description + '</p>';
-
-        // Switch carousel
-        const variantId = option.value;
-        const slides = carousel.querySelectorAll('.carousel-item');
-        slides.forEach((slide, index) => {
-            if (slide.dataset.variant === variantId) {
-                const inst = bootstrap.Carousel.getOrCreateInstance(carousel);
-                inst.to(index);
-            }
-        });
-    }
+    });
 }
-    function addToCartWithVariant() {
+
+function addToCartWithVariant() {
     const select = document.getElementById('variant-select');
-    const variantId = select.value;
+    const productId = select.value;
 
-    // If base product is selected, send empty variant_id
-    const body = (variantId === "base") ? "" : `variant_id=${variantId}`;
-
-    fetch(`/cart/add/${{ product.product_id }}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body
-    })
+    fetch(`/cart/add/${productId}`, { method: 'POST' })
     .then(r => r.json())
-    .then(() => alert('Added to cart!'))
-    .catch(() => alert('Error adding to cart'));
+    .then(data => {
+        if (data.success) {
+            alert('✅ Added to cart!');
+        } else if (data.error === "login") {
+            alert('Please log in first.');
+            window.location.href = '/login';
+        } else {
+            alert('Error adding to cart');
+        }
+    })
+    .catch(() => alert('Failed to add to cart'));
 }
 </script>
 {% endblock %}
