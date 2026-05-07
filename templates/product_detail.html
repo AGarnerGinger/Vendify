@@ -38,9 +38,12 @@
         <div class="col-lg-6">
             <h1 class="mb-3">{{ product.title }}</h1>
 
+            <!-- Price Display (updates on variant selection) -->
             <div id="price-display" class="mb-4">
                 {% if product.sale_price %}
-                    <h2 class="text-danger mb-1">${{ product.sale_price }} <span class="text-muted text-decoration-line-through ms-2">${{ product.price }}</span></h2>
+                    <h2 class="text-danger mb-1">${{ product.sale_price }}
+                        <span class="text-muted text-decoration-line-through ms-2">${{ product.price }}</span>
+                    </h2>
                 {% else %}
                     <h2 class="mb-1">${{ product.price }}</h2>
                 {% endif %}
@@ -50,13 +53,20 @@
             <div class="mb-4">
                 <label class="form-label fw-bold">Choose Variant</label>
                 <select id="variant-select" class="form-select" onchange="selectVariant()">
+                    <!-- Base Product -->
                     <option value="{{ product.product_id }}"
+                            data-price="{{ product.price }}"
+                            data-sale-price="{{ product.sale_price or '' }}"
                             data-image="{{ product.image or 'default.jpg' }}">
                         Base Product ({{ product.inventory }} in stock)
                     </option>
+
+                    <!-- Variants -->
                     {% for v in variants %}
                         {% if v.variant_name %}
                         <option value="{{ v.product_id }}"
+                                data-price="{{ v.price }}"
+                                data-sale-price="{{ product.sale_price or '' }}"   <!-- Use base sale price -->
                                 data-image="{{ v.image or product.image or 'default.jpg' }}">
                             {{ v.variant_name }} ({{ v.inventory }} in stock)
                         </option>
@@ -82,13 +92,24 @@
 function selectVariant() {
     const select = document.getElementById('variant-select');
     const option = select.options[select.selectedIndex];
-    const variantId = option.value;
 
-    // Switch carousel to correct slide
+    const priceDisplay = document.getElementById('price-display');
+
+    const price = parseFloat(option.dataset.price) || 0;
+    const salePrice = option.dataset.salePrice ? parseFloat(option.dataset.salePrice) : null;
+
+    // Update price display
+    if (salePrice !== null && salePrice > 0) {
+        priceDisplay.innerHTML = `<h2 class="text-danger mb-1">$${salePrice.toFixed(2)} <span class="text-muted text-decoration-line-through ms-2">$${price.toFixed(2)}</span></h2>`;
+    } else {
+        priceDisplay.innerHTML = `<h2 class="mb-1">$${price.toFixed(2)}</h2>`;
+    }
+
+    // Switch carousel image
     const carousel = document.getElementById('variantCarousel');
     const slides = carousel.querySelectorAll('.carousel-item');
     slides.forEach((slide, index) => {
-        if (slide.dataset.variant === variantId || (variantId === "{{ product.product_id }}" && slide.dataset.variant === "base")) {
+        if (slide.dataset.variant === option.value) {
             bootstrap.Carousel.getOrCreateInstance(carousel).to(index);
         }
     });

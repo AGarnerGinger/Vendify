@@ -19,7 +19,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # DATABASE
 engine = create_engine(
-    "mysql+pymysql://root:DevonCSET155@localhost/multi_vendor_ecommerce",
+    "mysql+pymysql://root:cset155@localhost/multi_vendor_ecommerce",
     echo=False,
     pool_pre_ping=True
 )
@@ -146,8 +146,11 @@ def vendor_products():
         flash("Unauthorized", "danger")
         return redirect(url_for('index'))
     with get_db() as conn:
-        prods = conn.execute(text("SELECT * FROM products WHERE vendor_id = :vid"),
-                           {"vid": session['user_id']}).fetchall()
+        prods = conn.execute(text("""
+            SELECT * FROM products 
+            WHERE vendor_id = :vid 
+              AND parent_product_id IS NULL
+        """), {"vid": session['user_id']}).fetchall()
     return render_template('vendor_products.html', products=prods)
 
 @app.route('/add-product', methods=['GET', 'POST'])
@@ -166,52 +169,59 @@ def add_product():
                 main_image = f"{int(datetime.datetime.now().timestamp())}_{filename}"
                 image.save(os.path.join(app.config['UPLOAD_FOLDER'], main_image))
 
-            sale_price = request.form.get('sale_price')
-            sale_price = float(sale_price) if sale_price and sale_price.strip() else None
+            base_price = float(request.form['price'])
+            base_sale_price = request.form.get('sale_price')
+            base_sale_price = float(base_sale_price) if base_sale_price and base_sale_price.strip() else None
 
             with get_db() as conn:
-                # Create the MAIN product
+                # Create main product
                 result = conn.execute(text("""
                     INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
                     VALUES (:t, :p, :sp, 0, :d, :img, :v, NULL, NULL)
                 """), {
                     "t": request.form['title'],
-                    "p": float(request.form['price']),
-                    "sp": sale_price,
+                    "p": base_price,
+                    "sp": base_sale_price,
                     "d": request.form.get('description', ''),
                     "img": main_image,
                     "v": session['user_id']
                 })
                 main_product_id = result.lastrowid
 
-                # Create each variant as a separate product row
+                # Create variants (use same sale price as base)
                 variant_names = request.form.getlist('variant_name[]')
                 variant_prices = request.form.getlist('variant_price[]')
+                variant_inventories = request.form.getlist('variant_inventory[]')
                 variant_images = request.files.getlist('variant_image[]')
 
                 for i, name in enumerate(variant_names):
-                    if name.strip():
-                        v_price = float(variant_prices[i]) if variant_prices[i] and variant_prices[i].strip() else None
+                    name = name.strip()
+                    if not name:
+                        continue
 
-                        v_image = None
-                        if i < len(variant_images) and variant_images[i].filename and allowed_file(variant_images[i].filename):
-                            fname = secure_filename(variant_images[i].filename)
-                            v_image = f"{int(datetime.datetime.now().timestamp())}_{fname}"
-                            variant_images[i].save(os.path.join(app.config['UPLOAD_FOLDER'], v_image))
+                    v_price = float(variant_prices[i]) if variant_prices[i] and variant_prices[i].strip() else base_price
+                    v_inventory = int(variant_inventories[i]) if i < len(variant_inventories) and variant_inventories[i].strip() else 10
 
-                        conn.execute(text("""
-                            INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
-                            VALUES (:t, :p, :sp, 10, :d, :img, :v, :vname, :parent)
-                        """), {
-                            "t": request.form['title'],
-                            "p": v_price or float(request.form['price']),
-                            "sp": None,
-                            "d": request.form.get('description', ''),
-                            "img": v_image or main_image,
-                            "v": session['user_id'],
-                            "vname": name.strip(),
-                            "parent": main_product_id
-                        })
+                    v_image = None
+                    if i < len(variant_images) and variant_images[i].filename and allowed_file(variant_images[i].filename):
+                        fname = secure_filename(variant_images[i].filename)
+                        v_image = f"{int(datetime.datetime.now().timestamp())}_{fname}"
+                        variant_images[i].save(os.path.join(app.config['UPLOAD_FOLDER'], v_image))
+
+                    conn.execute(text("""
+                        INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
+                        VALUES (:t, :p, :sp, :inv, :d, :img, :v, :vname, :parent)
+                    """), {
+                        "t": request.form['title'],
+                        "p": v_price,
+                        "sp": base_sale_price,          # ← Same sale price as base
+                        "inv": v_inventory,
+                        "d": request.form.get('description', ''),
+                        "img": v_image or main_image,
+                        "v": session['user_id'],
+                        "vname": name,
+                        "parent": main_product_id
+                    })
 
                 conn.commit()
 
@@ -220,6 +230,7 @@ def add_product():
 
         except Exception as e:
             flash(f"Error adding product: {str(e)}", "danger")
+            print("Error:", str(e))
 
     return render_template('add_product.html')
 
@@ -413,9 +424,12 @@ def chat():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
+    # Get selected vendor from URL query string (e.g. /chat?vendor_id=5)
+    selected_vendor_id = request.args.get('vendor_id', type=int)
+
     if request.method == 'POST':
         try:
-            receiver_id = int(request.form.get('receiver_id'))
+            receiver_id = int(request.form.get('receiver_id') or 0)
             message_text = request.form.get('message', '').strip()
             if receiver_id and message_text:
                 with get_db() as conn:
@@ -429,20 +443,41 @@ def chat():
                     })
                     conn.commit()
                 flash("Message sent!", "success")
-        except Exception:
+                # Stay in the same conversation after sending
+                return redirect(url_for('chat', vendor_id=receiver_id))
+        except Exception as e:
+            print("Chat send error:", str(e))
             flash("Failed to send message", "danger")
+            if selected_vendor_id:
+                return redirect(url_for('chat', vendor_id=selected_vendor_id))
 
     with get_db() as conn:
+        # All vendors (for the sidebar)
         vendors = conn.execute(text("SELECT user_id, username FROM users WHERE user_type = 'vendor'")).fetchall()
-        messages = conn.execute(text("""
-            SELECT m.*, u.username as other_user 
-            FROM messages m
-            JOIN users u ON (CASE WHEN m.sender_id = :uid THEN m.receiver_id ELSE m.sender_id END) = u.user_id
-            WHERE m.sender_id = :uid OR m.receiver_id = :uid
-            ORDER BY m.sent_at DESC LIMIT 50
-        """), {"uid": session['user_id']}).fetchall()
 
-    return render_template('chat.html', vendors=vendors, messages=messages)
+        # Messages for the selected vendor only (chronological order)
+        if selected_vendor_id:
+            messages = conn.execute(text("""
+                SELECT m.*, u.username as other_user 
+                FROM messages m
+                JOIN users u ON (
+                    CASE 
+                        WHEN m.sender_id = :uid THEN m.receiver_id 
+                        ELSE m.sender_id 
+                    END
+                ) = u.user_id
+                WHERE ((m.sender_id = :uid AND m.receiver_id = :vid) 
+                   OR (m.sender_id = :vid AND m.receiver_id = :uid))
+                ORDER BY m.sent_at ASC
+            """), {"uid": session['user_id'], "vid": selected_vendor_id}).fetchall()
+        else:
+            # No vendor selected yet → show empty or recent messages
+            messages = []
+
+    return render_template('chat.html',
+                           vendors=vendors,
+                           messages=messages,
+                           selected_vendor_id=selected_vendor_id)
 
 # ====================== COMPLAINTS ======================
 @app.route('/complaints', methods=['GET', 'POST'])
