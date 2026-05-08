@@ -19,7 +19,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # DATABASE
 engine = create_engine(
-    "mysql+pymysql://root:DevonCSET155@localhost/multi_vendor_ecommerce",
+    "mysql+pymysql://root:cset155@localhost/multi_vendor_ecommerce",
     echo=False,
     pool_pre_ping=True
 )
@@ -397,41 +397,13 @@ def remove_from_cart(pid):
         conn.commit()
     return jsonify({"success": True})
 
+
+
 # ====================== CHECKOUT & ORDERS ======================
-@app.route('/checkout', methods=['GET', 'POST'])
+@app.route('/checkout', methods=['GET'])
 def checkout():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        try:
-            with get_db() as conn:
-                items = conn.execute(text("""
-                    SELECT c.product_id, c.quantity, p.price, p.sale_price 
-                    FROM cart_items c JOIN products p ON c.product_id = p.product_id 
-                    WHERE c.user_id = :uid
-                """), {"uid": session['user_id']}).fetchall()
-
-                total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
-
-                result = conn.execute(text("""
-                    INSERT INTO orders (user_id, total_amount, status, order_date)
-                    VALUES (:uid, :total, 'pending', NOW())
-                """), {"uid": session['user_id'], "total": total})
-                order_id = result.lastrowid
-
-                for item in items:
-                    conn.execute(text("UPDATE products SET inventory = inventory - :qty WHERE product_id = :pid"),
-                               {"qty": item.quantity, "pid": item.product_id})
-
-                conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid"), {"uid": session['user_id']})
-                conn.commit()
-
-            flash(f"Order #{order_id} placed successfully!", "success")
-            return redirect(url_for('my_orders'))
-        except Exception:
-            flash("Failed to place order", "danger")
-            return redirect(url_for('cart'))
 
     with get_db() as conn:
         items = conn.execute(text("""
@@ -440,16 +412,93 @@ def checkout():
             WHERE c.user_id = :uid
         """), {"uid": session['user_id']}).fetchall()
     total = sum((float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
+
     return render_template('checkout.html', items=items, total=total)
 
-@app.route('/orders')
-def my_orders():
+
+@app.route('/checkout/confirm', methods=['POST'])
+def checkout_confirm():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    with get_db() as conn:
-        orders = conn.execute(text("SELECT * FROM orders WHERE user_id = :uid ORDER BY order_date DESC"),
-                            {"uid": session['user_id']}).fetchall()
-    return render_template('orders.html', orders=orders)
+
+    try:
+        email = request.form.get('email')
+
+        with get_db() as conn:
+            items = conn.execute(text("""
+                SELECT c.quantity, p.product_id, p.title, p.price, p.sale_price 
+                FROM cart_items c 
+                JOIN products p ON c.product_id = p.product_id 
+                WHERE c.user_id = :uid
+            """), {"uid": session['user_id']}).fetchall()
+
+            if not items:
+                flash("Your cart is empty.", "warning")
+                return redirect(url_for('cart'))
+
+            total = sum(
+                (float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
+
+            # Create order
+            result = conn.execute(text("""
+                INSERT INTO orders (user_id, total_amount, status, order_date)
+                VALUES (:uid, :total, 'pending', NOW())
+            """), {"uid": session['user_id'], "total": total})
+            order_id = result.lastrowid
+
+            # Reduce inventory
+            for item in items:
+                conn.execute(text("UPDATE products SET inventory = inventory - :qty WHERE product_id = :pid"),
+                             {"qty": item.quantity, "pid": item.product_id})
+
+            # Clear cart
+            conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid"), {"uid": session['user_id']})
+            conn.commit()
+
+        # Send confirmation email
+        if email:
+            try:
+                import smtplib
+                from email.mime.text import MIMEText
+
+                sender_email = "your.email@gmail.com"  # ← CHANGE THIS
+                sender_password = "your-app-password"  # ← CHANGE THIS
+
+                order_items_text = "\n".join([f"• {item.title} × {item.quantity}" for item in items])
+
+                msg = MIMEText(f"""
+Your order has been confirmed!
+
+Order #{order_id}
+Total: ${total:.2f}
+
+Items:
+{order_items_text}
+
+Thank you for shopping with Vendify!
+                """.strip())
+
+                msg['Subject'] = f"Order Confirmation #{order_id} - Vendify"
+                msg['From'] = sender_email
+                msg['To'] = email
+
+                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                    server.login(sender_email, sender_password)
+                    server.sendmail(sender_email, email, msg.as_string())
+
+                flash(f"Order #{order_id} placed successfully! Confirmation email sent.", "success")
+            except Exception as e:
+                print("Email error:", e)
+                flash(f"Order #{order_id} placed successfully!", "success")
+        else:
+            flash(f"Order #{order_id} placed successfully!", "success")
+
+        return redirect(url_for('my_orders'))
+
+    except Exception as e:
+        print("Checkout error:", str(e))
+        flash("Failed to process your order. Please try again.", "danger")
+        return redirect(url_for('checkout'))
 
 # ====================== CHAT ======================
 @app.route('/chat', methods=['GET', 'POST'])
