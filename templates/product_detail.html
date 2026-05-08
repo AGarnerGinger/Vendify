@@ -39,14 +39,15 @@
         <div class="col-lg-6">
             <h1 class="mb-3">{{ product.title }}</h1>
 
-            <!-- Dynamic Price -->
+            <!-- FIXED PRICE SECTION -->
             <div id="price-display" class="mb-4">
-                {% if product.sale_price %}
-                    <h2 class="text-danger mb-1">${{ product.sale_price }}
-                        <span class="text-muted text-decoration-line-through ms-2">${{ product.price }}</span>
-                    </h2>
+                {% if product.sale_price and product.sale_price < product.price %}
+                    <div class="d-flex align-items-baseline gap-3">
+                        <span class="fs-1 fw-bold text-danger">${{ product.sale_price }}</span>
+                        <span class="fs-3 text-muted text-decoration-line-through">${{ product.price }}</span>
+                    </div>
                 {% else %}
-                    <h2 class="mb-1">${{ product.price }}</h2>
+                    <span class="fs-1 fw-bold">${{ product.price }}</span>
                 {% endif %}
             </div>
 
@@ -70,7 +71,7 @@
                     {% for v in variants %}
                     <option value="{{ v.variant_id }}"
                             data-price="{{ v.price or product.price }}"
-                            data-sale-price="{{ v.price or product.sale_price or '' }}"
+                            data-sale-price="{{ v.sale_price or v.price or '' }}"
                             data-stock="{{ v.inventory }}"
                             data-image="{{ v.image or '' }}">
                         {{ v.variant_name }}
@@ -82,10 +83,10 @@
             </div>
             {% endif %}
 
+            <!-- Description -->
             <div id="description-display" class="mb-4">
                 <h5>Description</h5>
-                <p class="text-muted mb-2">Sold by: <strong>Vendor</strong></p>
-                <p>{{ product.description or 'No description available.' }}</p>
+                <p class="mt-3">{{ product.description or 'No description available.' }}</p>
             </div>
 
             <button onclick="addToCartWithVariant()" class="btn btn-success btn-lg w-100 mb-3">
@@ -95,13 +96,13 @@
         </div>
     </div>
 
-    <!-- REVIEWS SECTION - Exactly as you had it -->
+    <!-- REVIEWS SECTION -->
     <div class="mt-5">
         <h3 class="mb-4">Customer Reviews</h3>
 
         {% if session.user_id %}
         <div class="card mb-5">
-            <div class="card-header bg-light">
+            <div class="card-header">
                 <h5 class="mb-0">Write a Review</h5>
             </div>
             <div class="card-body">
@@ -133,7 +134,7 @@
 
         {% if reviews %}
             {% for r in reviews %}
-            <div class="card mb-3 shadow-sm">
+            <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
@@ -153,7 +154,7 @@
 </div>
 
 <script>
-    // Star rating (exactly as you had)
+    // Star rating
     const stars = document.querySelectorAll('#star-rating .star');
     const ratingInput = document.getElementById('rating-input');
 
@@ -161,48 +162,33 @@
         star.addEventListener('click', () => {
             const value = parseInt(star.dataset.value);
             ratingInput.value = value;
-            stars.forEach(s => {
-                s.textContent = parseInt(s.dataset.value) <= value ? '★' : '☆';
-            });
+            stars.forEach(s => s.textContent = parseInt(s.dataset.value) <= value ? '★' : '☆');
         });
     });
 
-    // Variant selection - updates price, stock, and carousel
+    // Variant selection
     function selectVariant() {
         const select = document.getElementById('variant-select');
         const option = select.options[select.selectedIndex];
 
-        if (option.value === "main") {
-            // Reset to main product
-            document.getElementById('price-display').innerHTML = `
-                {% if product.sale_price %}
-                    <h2 class="text-danger mb-1">${{ product.sale_price }}
-                        <span class="text-muted text-decoration-line-through ms-2">${{ product.price }}</span>
-                    </h2>
-                {% else %}
-                    <h2 class="mb-1">${{ product.price }}</h2>
-                {% endif %}
-            `;
-            document.getElementById('stock-display').innerHTML = `{{ product.inventory }} units available`;
-            // Switch carousel to main image
-            const carousel = new bootstrap.Carousel(document.getElementById('variantCarousel'));
-            carousel.to(0);
-            return;
-        }
-
-        // Update price
+        // Update price display
         const price = parseFloat(option.dataset.price);
-        const salePrice = option.dataset.salePrice;
-        let priceHTML = `<h2 class="mb-1">$${price.toFixed(2)}</h2>`;
-        if (salePrice) {
-            priceHTML = `<h2 class="text-danger mb-1">$${salePrice} <span class="text-muted text-decoration-line-through ms-2">$${price.toFixed(2)}</span></h2>`;
+        const salePrice = option.dataset.salePrice ? parseFloat(option.dataset.salePrice) : null;
+
+        let priceHTML = `<span class="fs-1 fw-bold">$${price.toFixed(2)}</span>`;
+        if (salePrice && salePrice < price) {
+            priceHTML = `
+                <div class="d-flex align-items-baseline gap-3">
+                    <span class="fs-1 fw-bold text-danger">$${salePrice.toFixed(2)}</span>
+                    <span class="fs-3 text-muted text-decoration-line-through">$${price.toFixed(2)}</span>
+                </div>`;
         }
         document.getElementById('price-display').innerHTML = priceHTML;
 
         // Update stock
         document.getElementById('stock-display').innerHTML = `${option.dataset.stock} in stock`;
 
-        // Switch carousel to the correct variant slide
+        // Switch carousel image
         const variantId = option.value;
         const slideIndex = Array.from(document.querySelectorAll('#variantCarousel .carousel-item'))
                               .findIndex(item => item.getAttribute('data-variant') === variantId);
@@ -216,7 +202,6 @@
         const select = document.getElementById('variant-select');
         const variantId = select ? select.value : 'main';
 
-        // For now we add the main product (variant support in cart coming soon)
         fetch(`/cart/add/${ {{ product.product_id }} }`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }

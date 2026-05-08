@@ -3,49 +3,33 @@
 
 {% block content %}
 <div class="container my-5">
-    <h1 class="mb-4">My Orders</h1>
+    <h2 class="mb-4">My Orders</h2>
 
     {% if orders %}
-        <div class="row">
-            {% for order in orders %}
-            <div class="col-12 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
-                        <div>
-                            <strong>Order #{{ order.order_id }}</strong>
-                            <small class="text-muted ms-3">
-                                {{ order.order_date.strftime('%B %d, %Y at %I:%M %p') if order.order_date else 'Recent' }}
-                            </small>
-                        </div>
-                        <span class="badge
-                            {% if order.status == 'completed' %}bg-success
-                            {% elif order.status == 'pending' %}bg-warning
-                            {% elif order.status == 'cancelled' %}bg-danger
-                            {% else %}bg-secondary{% endif %}">
-                            {{ order.status|capitalize }}
-                        </span>
+        {% for order in orders %}
+        <div class="card luxury-card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>Order #{{ order.order_id }}</h5>
+                        <small class="text-muted">
+                            {{ order.order_date.strftime('%B %d, %Y at %I:%M %p') if order.order_date else 'Recent' }}
+                        </small>
                     </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>Total Amount:</strong>
-                                <span class="fs-4 fw-bold text-success">${{ order.total_amount }}</span>
-                            </div>
-                            <a href="#" class="btn btn-outline-primary btn-sm">
-                                View Details
-                            </a>
-                        </div>
-                    </div>
+                    <span class="badge bg-success">{{ order.status|capitalize }}</span>
+                </div>
+                <div class="mt-3 d-flex justify-content-between fs-5">
+                    <strong>Total:</strong>
+                    <strong>${{ order.total_amount }}</strong>
                 </div>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     {% else %}
         <div class="text-center py-5">
-            <h4 class="text-muted">You haven't placed any orders yet.</h4>
-            <a href="/products" class="btn btn-primary btn-lg mt-3">
-                Start Shopping
-            </a>
+            <h3>You haven't placed any orders yet.</h3>
+            <p class="text-muted">Your orders will appear here after you checkout.</p>
+            <a href="/products" class="btn btn-primary btn-lg mt-3">Start Shopping</a>
         </div>
     {% endif %}
 </div>

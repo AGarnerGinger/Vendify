@@ -500,6 +500,27 @@ Thank you for shopping with Vendify!
         flash("Failed to process your order. Please try again.", "danger")
         return redirect(url_for('checkout'))
 
+
+@app.route('/orders')
+def my_orders():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    try:
+        with get_db() as conn:
+            orders = conn.execute(text("""
+                SELECT * FROM orders 
+                WHERE user_id = :uid 
+                ORDER BY order_date DESC
+            """), {"uid": session['user_id']}).fetchall()
+
+        return render_template('orders.html', orders=orders)
+
+    except Exception as e:
+        print("Orders error:", e)  # for debugging
+        flash("There was an issue loading your orders.", "danger")
+        return render_template('orders.html', orders=[])
+
 # ====================== CHAT ======================
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
