@@ -7,172 +7,104 @@
 
 <!-- HERO VIDEO SECTION -->
 <section class="video-hero">
-
     <video autoplay muted loop playsinline>
         <source src="{{ url_for('static', filename='videos/Jewvid2.mov') }}" type="video/mp4">
     </video>
-
     <div class="video-overlay"></div>
-
     <div class="hero-content">
         <p class="hero-subtitle">Luxury Jewelry Marketplace</p>
-
         <h1>Discover Elegant Pieces That Shine</h1>
-
-        <a href="/products" class="hero-btn">
-            Shop Collection
-        </a>
+        <a href="/products" class="hero-btn">Shop Collection</a>
     </div>
-
 </section>
 
 <!-- SECOND HERO -->
 <section class="video-hero small-hero">
-
     <video autoplay muted loop playsinline>
         <source src="{{ url_for('static', filename='videos/ringvid1.mov') }}" type="video/mp4">
     </video>
-
     <div class="video-overlay"></div>
-
     <div class="hero-content">
         <p class="hero-subtitle">New Arrivals</p>
-
         <h1>Modern Jewelry For Every Style</h1>
     </div>
-
 </section>
+
 <!-- MOTHER'S DAY SECTION -->
-
 <section class="mothers-day-banner">
-
     <div class="mothers-content">
-
-        <span class="mothers-tag">
-            Mother's Day Collection
-        </span>
-
-        <h2>
-            Celebrate Mom With Timeless Jewelry
-        </h2>
-
-        <p>
-            Elegant gifts designed to shine forever.
-        </p>
-
-        <a href="/products" class="mothers-btn">
-            Shop Mother's Day
-        </a>
-
+        <span class="mothers-tag">Mother's Day Collection</span>
+        <h2>Celebrate Mom With Timeless Jewelry</h2>
+        <p>Elegant gifts designed to shine forever.</p>
+        <a href="/products" class="mothers-btn">Shop Mother's Day</a>
     </div>
-
     <div class="mothers-image">
-
-        <img
-            src="{{ url_for('static', filename='uploads/products/momBracelet.png') }}"
-            alt="Mother's Day Jewelry"
-        >
-
+        <img src="{{ url_for('static', filename='uploads/products/momBracelet.png') }}" alt="Mother's Day Jewelry">
     </div>
-
 </section>
 
 <!-- FEATURED PRODUCTS -->
 <section class="featured-section">
-
     <div class="section-header">
         <p>Featured Collection</p>
         <h2>On Sale</h2>
     </div>
 
     <div class="product-grid">
-
         {% for p in products %}
-
         <div class="luxury-card fade-in">
-
             {% if p.image %}
-            <img
-                src="{{ url_for('static', filename='uploads/products/' + p.image) }}"
-                alt="{{ p.title }}"
-            >
+            <img src="{{ url_for('static', filename='uploads/products/' + p.image) }}" alt="{{ p.title }}">
             {% endif %}
 
             <div class="card-info">
-
                 <h3>{{ p.title }}</h3>
+                <small class="text-muted">by {{ p.vendor_name }}</small>
 
                 <span class="price">
-                    ${{ p.price }}
+                    {% if p.sale_price %}
+                        <span class="text-danger">${{ p.sale_price }}</span>
+                        <span class="text-white text-decoration-line-through ms-2">${{ p.price }}</span>
+                    {% else %}
+                        ${{ p.price }}
+                    {% endif %}
                 </span>
 
                 <div class="card-buttons">
-
-                    <a
-                        href="/product/{{ p.product_id }}"
-                        class="details-btn"
-                    >
-                        View Details
-                    </a>
-
-                    <button
-                        onclick="addToCart({{ p.product_id }})"
-                        class="cart-btn"
-                    >
-                        Add To Cart
-                    </button>
-
+                    <a href="/product/{{ p.product_id }}" class="details-btn">View Details</a>
+                    <button onclick="addToCart({{ p.product_id }})" class="cart-btn">Add To Cart</button>
                 </div>
-
             </div>
-
         </div>
-
         {% endfor %}
-
     </div>
-
 </section>
 
 <script>
-
 const fadeElements = document.querySelectorAll('.fade-in');
 
 const observer = new IntersectionObserver(entries => {
-
     entries.forEach(entry => {
-
         if(entry.isIntersecting){
             entry.target.classList.add('show');
         }
-
     });
-
 });
 
 fadeElements.forEach(el => observer.observe(el));
 
 function addToCart(id) {
-
     fetch(`/cart/add/${id}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
     })
-
     .then(response => response.json())
-
     .then(data => {
-
         if(data.success){
             alert('Added to cart!');
         }
-
     });
-
 }
-
 </script>
 
 {% endblock %}

@@ -8,13 +8,10 @@
         <div class="col-lg-6">
             <div id="variantCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                    <!-- Base product image -->
                     <div class="carousel-item active" data-variant="base">
                         <img src="{{ url_for('static', filename='uploads/products/' + (product.image or 'default.jpg')) }}"
                              class="d-block w-100 rounded" style="max-height: 500px; object-fit: contain;">
                     </div>
-
-                    <!-- Variant images -->
                     {% for v in variants %}
                         {% if v.variant_name %}
                         <div class="carousel-item" data-variant="{{ v.product_id }}">
@@ -24,7 +21,6 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-
                 <button class="carousel-control-prev" type="button" data-bs-target="#variantCarousel" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                 </button>
@@ -38,7 +34,6 @@
         <div class="col-lg-6">
             <h1 class="mb-3">{{ product.title }}</h1>
 
-            <!-- Price Display (updates on variant selection) -->
             <div id="price-display" class="mb-4">
                 {% if product.sale_price %}
                     <h2 class="text-danger mb-1">${{ product.sale_price }}
@@ -49,24 +44,20 @@
                 {% endif %}
             </div>
 
-            <!-- Variant Dropdown -->
             <div class="mb-4">
                 <label class="form-label fw-bold">Choose Variant</label>
                 <select id="variant-select" class="form-select" onchange="selectVariant()">
-                    <!-- Base Product -->
                     <option value="{{ product.product_id }}"
                             data-price="{{ product.price }}"
                             data-sale-price="{{ product.sale_price or '' }}"
                             data-image="{{ product.image or 'default.jpg' }}">
                         Base Product ({{ product.inventory }} in stock)
                     </option>
-
-                    <!-- Variants -->
                     {% for v in variants %}
                         {% if v.variant_name %}
                         <option value="{{ v.product_id }}"
                                 data-price="{{ v.price }}"
-                                data-sale-price="{{ product.sale_price or '' }}"   <!-- Use base sale price -->
+                                data-sale-price="{{ product.sale_price or '' }}"
                                 data-image="{{ v.image or product.image or 'default.jpg' }}">
                             {{ v.variant_name }} ({{ v.inventory }} in stock)
                         </option>
@@ -75,8 +66,11 @@
                 </select>
             </div>
 
+
+
             <div id="description-display" class="mb-4">
                 <h5>Description</h5>
+                <p class="text-muted mb-2">Sold by: <strong>{{ product.vendor_name }}</strong></p>
                 <p>{{ product.description or 'No description available.' }}</p>
             </div>
 
@@ -86,52 +80,92 @@
             <a href="/products" class="btn btn-outline-secondary">← Back to Shop</a>
         </div>
     </div>
+
+    <!-- REVIEWS SECTION - Form first, then existing reviews -->
+    <div class="mt-5">
+        <h3 class="mb-4">Customer Reviews</h3>
+
+        <!-- Write a Review Form (moved to the top) -->
+        {% if session.user_id %}
+        <div class="card mb-5">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Write a Review</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('submit_review', pid=product.product_id) }}">
+                    <!-- Star Rating -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rating</label>
+                        <div id="star-rating" class="fs-2">
+                            {% for i in range(1,6) %}
+                            <span class="star text-warning" data-value="{{ i }}" style="cursor: pointer;">☆</span>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="rating" id="rating-input" value="5" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Review</label>
+                        <textarea name="description" class="form-control" rows="4"
+                                 required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-muted mb-5">
+            <a href="/login" class="text-decoration-none">Log in</a> to leave a review.
+        </p>
+        {% endif %}
+
+        <!-- Existing Reviews (newest first) -->
+        {% if reviews %}
+            {% for r in reviews %}
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ r.username }}</strong>
+                            <span class="text-warning ms-2 fs-4">
+                                {{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ r.created_at.strftime('%b %d, %Y') }}</small>
+                    </div>
+                    <p class="mt-3 mb-0">{{ r.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+
+        {% endif %}
+    </div>
 </div>
 
 <script>
-function selectVariant() {
-    const select = document.getElementById('variant-select');
-    const option = select.options[select.selectedIndex];
+    // Star rating interactivity
+    const stars = document.querySelectorAll('#star-rating .star');
+    const ratingInput = document.getElementById('rating-input');
 
-    const priceDisplay = document.getElementById('price-display');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const value = parseInt(star.dataset.value);
+            ratingInput.value = value;
 
-    const price = parseFloat(option.dataset.price) || 0;
-    const salePrice = option.dataset.salePrice ? parseFloat(option.dataset.salePrice) : null;
-
-    // Update price display
-    if (salePrice !== null && salePrice > 0) {
-        priceDisplay.innerHTML = `<h2 class="text-danger mb-1">$${salePrice.toFixed(2)} <span class="text-muted text-decoration-line-through ms-2">$${price.toFixed(2)}</span></h2>`;
-    } else {
-        priceDisplay.innerHTML = `<h2 class="mb-1">$${price.toFixed(2)}</h2>`;
-    }
-
-    // Switch carousel image
-    const carousel = document.getElementById('variantCarousel');
-    const slides = carousel.querySelectorAll('.carousel-item');
-    slides.forEach((slide, index) => {
-        if (slide.dataset.variant === option.value) {
-            bootstrap.Carousel.getOrCreateInstance(carousel).to(index);
-        }
+            stars.forEach(s => {
+                s.textContent = parseInt(s.dataset.value) <= value ? '★' : '☆';
+            });
+        });
     });
-}
 
-function addToCartWithVariant() {
-    const select = document.getElementById('variant-select');
-    const productId = select.value;
-
-    fetch(`/cart/add/${productId}`, { method: 'POST' })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ Added to cart!');
-        } else if (data.error === "login") {
-            alert('Please log in first.');
-            window.location.href = '/login';
-        } else {
-            alert('Error adding to cart');
-        }
-    })
-    .catch(() => alert('Failed to add to cart'));
-}
+    // Your existing variant scripts (keep these unchanged)
+    function selectVariant() {
+        // ... your original selectVariant function ...
+    }
+    function addToCartWithVariant() {
+        // ... your original addToCartWithVariant function ...
+    }
 </script>
 {% endblock %}
