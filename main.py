@@ -19,7 +19,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # DATABASE
 engine = create_engine(
-    "mysql+pymysql://root:cset155@localhost/multi_vendor_ecommerce",
+    "mysql+pymysql://root:DevonCSET155@localhost/multi_vendor_ecommerce",
     echo=False,
     pool_pre_ping=True
 )
