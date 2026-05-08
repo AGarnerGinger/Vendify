@@ -29,7 +29,8 @@ body{
     object-fit: contain;
     transform: scale(1.25);
     background: black;
-    width: 125%
+    width: 135%
+
 }
 
 .video-overlay{
