@@ -159,11 +159,9 @@ def products_page():
                            sort_by=sort_by)
 
 @app.route('/product/<int:pid>')
-
-@app.route('/product/<int:pid>')
 def product_detail(pid):
     with get_db() as conn:
-        # Main product + vendor
+        # Main product + vendor name
         product = conn.execute(text("""
             SELECT p.*, u.username as vendor_name 
             FROM products p 
@@ -171,15 +169,18 @@ def product_detail(pid):
             WHERE p.product_id = :id
         """), {"id": pid}).fetchone()
 
-        # Variants + base product
+        if not product:
+            flash("Product not found", "danger")
+            return redirect(url_for('products_page'))
+
+        # Get variants from the product_variants table (this is the correct table)
         variants = conn.execute(text("""
-            SELECT * FROM products 
-            WHERE (parent_product_id = :pid OR product_id = :pid)
-              AND (variant_name IS NOT NULL OR product_id = :pid)
-            ORDER BY variant_name IS NULL DESC, variant_name
+            SELECT * FROM product_variants 
+            WHERE product_id = :pid 
+            ORDER BY variant_name
         """), {"pid": pid}).fetchall()
 
-        # REVIEWS (already there from previous fix)
+        # Get reviews
         reviews = conn.execute(text("""
             SELECT r.*, u.username 
             FROM reviews r
@@ -243,6 +244,7 @@ def vendor_products():
         """), {"vid": session['user_id']}).fetchall()
     return render_template('vendor_products.html', products=prods)
 
+
 @app.route('/add-product', methods=['GET', 'POST'])
 def add_product():
     if session.get('user_type') != 'vendor':
@@ -251,87 +253,7 @@ def add_product():
 
     if request.method == 'POST':
         try:
-            # Main product image
-            main_image = None
-            image = request.files.get('main_image')
-            if image and image.filename and allowed_file(image.filename):
-                filename = secure_filename(image.filename)
-                main_image = f"{int(datetime.datetime.now().timestamp())}_{filename}"
-                image.save(os.path.join(app.config['UPLOAD_FOLDER'], main_image))
-
-            base_price = float(request.form['price'])
-            base_sale_price = request.form.get('sale_price')
-            base_sale_price = float(base_sale_price) if base_sale_price and base_sale_price.strip() else None
-
-            with get_db() as conn:
-                # Create main product
-                result = conn.execute(text("""
-                    INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
-                    VALUES (:t, :p, :sp, 0, :d, :img, :v, NULL, NULL)
-                """), {
-                    "t": request.form['title'],
-                    "p": base_price,
-                    "sp": base_sale_price,
-                    "d": request.form.get('description', ''),
-                    "img": main_image,
-                    "v": session['user_id']
-                })
-                main_product_id = result.lastrowid
-
-                # Create variants (use same sale price as base)
-                variant_names = request.form.getlist('variant_name[]')
-                variant_prices = request.form.getlist('variant_price[]')
-                variant_inventories = request.form.getlist('variant_inventory[]')
-                variant_images = request.files.getlist('variant_image[]')
-
-                for i, name in enumerate(variant_names):
-                    name = name.strip()
-                    if not name:
-                        continue
-
-                    v_price = float(variant_prices[i]) if variant_prices[i] and variant_prices[i].strip() else base_price
-                    v_inventory = int(variant_inventories[i]) if i < len(variant_inventories) and variant_inventories[i].strip() else 10
-
-                    v_image = None
-                    if i < len(variant_images) and variant_images[i].filename and allowed_file(variant_images[i].filename):
-                        fname = secure_filename(variant_images[i].filename)
-                        v_image = f"{int(datetime.datetime.now().timestamp())}_{fname}"
-                        variant_images[i].save(os.path.join(app.config['UPLOAD_FOLDER'], v_image))
-
-                    conn.execute(text("""
-                        INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id, variant_name, parent_product_id)
-                        VALUES (:t, :p, :sp, :inv, :d, :img, :v, :vname, :parent)
-                    """), {
-                        "t": request.form['title'],
-                        "p": v_price,
-                        "sp": base_sale_price,          # ← Same sale price as base
-                        "inv": v_inventory,
-                        "d": request.form.get('description', ''),
-                        "img": v_image or main_image,
-                        "v": session['user_id'],
-                        "vname": name,
-                        "parent": main_product_id
-                    })
-
-                conn.commit()
-
-            flash("Product and variants added successfully!", "success")
-            return redirect(url_for('vendor_products'))
-
-        except Exception as e:
-            flash(f"Error adding product: {str(e)}", "danger")
-            print("Error:", str(e))
-
-    return render_template('add_product.html')
-
-@app.route('/edit-product/<int:pid>', methods=['GET', 'POST'])
-def edit_product(pid):
-    if session.get('user_type') != 'vendor':
-        flash("Unauthorized", "danger")
-        return redirect(url_for('index'))
-
-    if request.method == 'POST':
-        try:
+            # === Main product image ===
             image_filename = None
             image = request.files.get('image')
             if image and image.filename and allowed_file(image.filename):
@@ -343,47 +265,68 @@ def edit_product(pid):
             sale_price = float(sale_price) if sale_price and sale_price.strip() else None
 
             with get_db() as conn:
-                if image_filename:
-                    conn.execute(text("""
-                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:i, description=:d, image=:img
-                        WHERE product_id=:id AND vendor_id=:vid
-                    """), {
-                        "t": request.form['title'], "p": float(request.form['price']),
-                        "sp": sale_price, "i": int(request.form.get('inventory', 0)),
-                        "d": request.form.get('description', ''), "img": image_filename,
-                        "id": pid, "vid": session['user_id']
-                    })
-                else:
-                    conn.execute(text("""
-                        UPDATE products SET title=:t, price=:p, sale_price=:sp, inventory=:i, description=:d
-                        WHERE product_id=:id AND vendor_id=:vid
-                    """), {
-                        "t": request.form['title'], "p": float(request.form['price']),
-                        "sp": sale_price, "i": int(request.form.get('inventory', 0)),
-                        "d": request.form.get('description', ''), "id": pid, "vid": session['user_id']
-                    })
+                result = conn.execute(text("""
+                    INSERT INTO products (title, price, sale_price, inventory, description, image, vendor_id)
+                    VALUES (:t, :p, :sp, :i, :d, :img, :v)
+                """), {
+                    "t": request.form['title'],
+                    "p": float(request.form['price']),
+                    "sp": sale_price,
+                    "i": int(request.form.get('inventory', 0)),
+                    "d": request.form.get('description', ''),
+                    "img": image_filename,
+                    "v": session['user_id']
+                })
+                product_id = result.lastrowid
                 conn.commit()
-            flash("Product updated successfully!", "success")
+
+            # === Save variants + their images ===
+            variant_names = request.form.getlist('variant_name[]')
+            variant_prices = request.form.getlist('variant_price[]')
+            variant_inventories = request.form.getlist('variant_inventory[]')
+            variant_images = request.files.getlist('variant_image[]')
+
+            if variant_names and any(v.strip() for v in variant_names):
+                UPLOAD_FOLDER = 'static/uploads/variants'
+                os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+                with get_db() as conn:
+                    for i, name in enumerate(variant_names):
+                        if not name.strip():
+                            continue
+
+                        v_price = float(variant_prices[i]) if variant_prices[i] and variant_prices[i].strip() else None
+                        v_inventory = int(variant_inventories[i]) if variant_inventories[i] else 0
+
+                        # Variant image
+                        v_image_filename = None
+                        if i < len(variant_images) and variant_images[i].filename:
+                            v_file = variant_images[i]
+                            if allowed_file(v_file.filename):
+                                v_filename = secure_filename(v_file.filename)
+                                v_image_filename = f"var_{product_id}_{int(datetime.datetime.now().timestamp())}_{v_filename}"
+                                v_file.save(os.path.join(UPLOAD_FOLDER, v_image_filename))
+
+                        conn.execute(text("""
+                            INSERT INTO product_variants 
+                            (product_id, variant_name, price, inventory, image)
+                            VALUES (:pid, :name, :price, :inv, :img)
+                        """), {
+                            "pid": product_id,
+                            "name": name.strip(),
+                            "price": v_price,
+                            "inv": v_inventory,
+                            "img": v_image_filename
+                        })
+                    conn.commit()
+
+            flash("Product and variants added successfully!", "success")
             return redirect(url_for('vendor_products'))
+
         except Exception as e:
-            flash(f"Error updating product: {str(e)}", "danger")
+            flash(f"Error: {str(e)}", "danger")
 
-    with get_db() as conn:
-        product = conn.execute(text("SELECT * FROM products WHERE product_id = :id AND vendor_id = :vid"),
-                             {"id": pid, "vid": session['user_id']}).fetchone()
-    return render_template('edit_product.html', product=product)
-
-@app.route('/delete-product/<int:pid>')
-def delete_product(pid):
-    if session.get('user_type') != 'vendor':
-        flash("Unauthorized", "danger")
-        return redirect(url_for('index'))
-    with get_db() as conn:
-        conn.execute(text("DELETE FROM products WHERE product_id=:id AND vendor_id=:vid"),
-                   {"id": pid, "vid": session['user_id']})
-        conn.commit()
-    flash("Product deleted", "success")
-    return redirect(url_for('vendor_products'))
+    return render_template('add_product.html')
 
 # ====================== CART ======================
 @app.route('/cart')
