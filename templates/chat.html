@@ -6,7 +6,6 @@
     <h1 class="mb-4">Messages</h1>
 
     <div class="row">
-        <!-- Sidebar -->
         <div class="col-lg-4 col-xl-3 mb-4">
             <div class="card shadow h-100">
                 <div class="card-header bg-primary text-white">
@@ -69,7 +68,6 @@
             </div>
         </div>
 
-        <!-- Chat Window -->
         <div class="col-lg-8 col-xl-9">
             <div class="card shadow h-100">
                 <div class="card-header bg-dark text-white">
@@ -143,11 +141,10 @@
 </div>
 
 <script>
-    // Auto-scroll to bottom when conversation loads
-    function scrollToBottom() {
-        const chatBody = document.getElementById('chat-body');
-        if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
-    }
-    window.addEventListener('load', scrollToBottom);
+function scrollToBottom() {
+    const chatBody = document.getElementById('chat-body');
+    if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+}
+window.addEventListener('load', scrollToBottom);
 </script>
 {% endblock %}

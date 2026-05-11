@@ -4,18 +4,15 @@
 {% block content %}
 <div class="container my-5">
     <div class="row">
-        <!-- Image Carousel -->
         <div class="col-lg-6">
             <div id="variantCarousel" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
-                    <!-- Main product image -->
                     <div class="carousel-item active" data-variant="main">
                         <img id="main-product-image"
                              src="{{ url_for('static', filename='uploads/products/' + (product.image or 'default.jpg')) }}"
                              class="d-block w-100 rounded" style="max-height: 500px; object-fit: contain;">
                     </div>
 
-                    <!-- Variant images -->
                     {% for v in variants %}
                     {% if v.image %}
                     <div class="carousel-item" data-variant="{{ v.variant_id }}">
@@ -35,11 +32,9 @@
             </div>
         </div>
 
-        <!-- Product Info -->
         <div class="col-lg-6">
             <h1 class="mb-3">{{ product.title }}</h1>
 
-            <!-- FIXED PRICE SECTION -->
             <div id="price-display" class="mb-4">
                 {% if product.sale_price and product.sale_price < product.price %}
                     <div class="d-flex align-items-baseline gap-3">
@@ -51,13 +46,11 @@
                 {% endif %}
             </div>
 
-            <!-- Stock -->
             <p class="mb-4">
                 <strong>Stock:</strong>
                 <span id="stock-display" class="text-success">{{ product.inventory }} units available</span>
             </p>
 
-            <!-- Variant Selector -->
             {% if variants %}
             <div class="mb-4">
                 <label class="form-label fw-bold">Choose Variant</label>
@@ -83,7 +76,6 @@
             </div>
             {% endif %}
 
-            <!-- Description -->
             <div id="description-display" class="mb-4">
                 <h5>Description</h5>
                 <p class="mt-3">{{ product.description or 'No description available.' }}</p>
@@ -96,7 +88,6 @@
         </div>
     </div>
 
-    <!-- REVIEWS SECTION -->
     <div class="mt-5">
         <h3 class="mb-4">Customer Reviews</h3>
 
@@ -154,66 +145,61 @@
 </div>
 
 <script>
-    // Star rating
-    const stars = document.querySelectorAll('#star-rating .star');
-    const ratingInput = document.getElementById('rating-input');
+const stars = document.querySelectorAll('#star-rating .star');
+const ratingInput = document.getElementById('rating-input');
 
-    stars.forEach(star => {
-        star.addEventListener('click', () => {
-            const value = parseInt(star.dataset.value);
-            ratingInput.value = value;
-            stars.forEach(s => s.textContent = parseInt(s.dataset.value) <= value ? '★' : '☆');
-        });
+stars.forEach(star => {
+    star.addEventListener('click', () => {
+        const value = parseInt(star.dataset.value);
+        ratingInput.value = value;
+        stars.forEach(s => s.textContent = parseInt(s.dataset.value) <= value ? '★' : '☆');
     });
+});
 
-    // Variant selection
-    function selectVariant() {
-        const select = document.getElementById('variant-select');
-        const option = select.options[select.selectedIndex];
+function selectVariant() {
+    const select = document.getElementById('variant-select');
+    const option = select.options[select.selectedIndex];
 
-        // Update price display
-        const price = parseFloat(option.dataset.price);
-        const salePrice = option.dataset.salePrice ? parseFloat(option.dataset.salePrice) : null;
+    const price = parseFloat(option.dataset.price);
+    const salePrice = option.dataset.salePrice ? parseFloat(option.dataset.salePrice) : null;
 
-        let priceHTML = `<span class="fs-1 fw-bold">$${price.toFixed(2)}</span>`;
-        if (salePrice && salePrice < price) {
-            priceHTML = `
-                <div class="d-flex align-items-baseline gap-3">
-                    <span class="fs-1 fw-bold text-danger">$${salePrice.toFixed(2)}</span>
-                    <span class="fs-3 text-muted text-decoration-line-through">$${price.toFixed(2)}</span>
-                </div>`;
-        }
-        document.getElementById('price-display').innerHTML = priceHTML;
-
-        // Update stock
-        document.getElementById('stock-display').innerHTML = `${option.dataset.stock} in stock`;
-
-        // Switch carousel image
-        const variantId = option.value;
-        const slideIndex = Array.from(document.querySelectorAll('#variantCarousel .carousel-item'))
-                              .findIndex(item => item.getAttribute('data-variant') === variantId);
-        if (slideIndex !== -1) {
-            const carousel = new bootstrap.Carousel(document.getElementById('variantCarousel'));
-            carousel.to(slideIndex);
-        }
+    let priceHTML = `<span class="fs-1 fw-bold">$${price.toFixed(2)}</span>`;
+    if (salePrice && salePrice < price) {
+        priceHTML = `
+            <div class="d-flex align-items-baseline gap-3">
+                <span class="fs-1 fw-bold text-danger">$${salePrice.toFixed(2)}</span>
+                <span class="fs-3 text-muted text-decoration-line-through">$${price.toFixed(2)}</span>
+            </div>`;
     }
+    document.getElementById('price-display').innerHTML = priceHTML;
 
-    function addToCartWithVariant() {
-        const select = document.getElementById('variant-select');
-        const variantId = select ? select.value : 'main';
+    document.getElementById('stock-display').innerHTML = `${option.dataset.stock} in stock`;
 
-        fetch(`/cart/add/${ {{ product.product_id }} }`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ Added to cart!');
-            } else {
-                alert('Please log in first.');
-            }
-        });
+    const variantId = option.value;
+    const slideIndex = Array.from(document.querySelectorAll('#variantCarousel .carousel-item'))
+                          .findIndex(item => item.getAttribute('data-variant') === variantId);
+    if (slideIndex !== -1) {
+        const carousel = new bootstrap.Carousel(document.getElementById('variantCarousel'));
+        carousel.to(slideIndex);
     }
+}
+
+function addToCartWithVariant() {
+    const select = document.getElementById('variant-select');
+    const variantId = select ? select.value : 'main';
+
+    fetch(`/cart/add/${ {{ product.product_id }} }`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ Added to cart!');
+        } else {
+            alert('Please log in first.');
+        }
+    });
+}
 </script>
 {% endblock %}

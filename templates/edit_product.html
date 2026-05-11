@@ -35,7 +35,6 @@
                     <textarea name="description" class="form-control" rows="3">{{ product.description or '' }}</textarea>
                 </div>
 
-                <!-- Main Image -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">Main Image</label>
                     <input type="file" name="main_image" class="form-control" accept="image/*">
@@ -49,7 +48,6 @@
 
                 <hr>
 
-                <!-- Variants -->
                 <h5 class="mb-3">Variants</h5>
                 {% for v in variants %}
                 <div class="border p-3 mb-3 rounded bg-light">
@@ -92,11 +90,9 @@
 <script>
 function addNewVariantRow() {
     const container = document.getElementById('new-variants-container') ||
-                      document.createElement('div'); // fallback
-    // (add your existing addNewVariantRow logic here if needed)
+                      document.createElement('div');
 }
 
-// Global protection against negative numbers
 document.addEventListener('input', function(e) {
     if (e.target.type === 'number') {
         if (parseFloat(e.target.value) < 0) {

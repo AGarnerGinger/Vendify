@@ -14,7 +14,6 @@
                 <div class="card-body">
                     <form method="POST" action="/checkout/confirm">
 
-                        <!-- Shipping Address -->
                         <h6 class="mb-3">Shipping Address</h6>
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -64,7 +63,6 @@
                             </div>
                         </div>
 
-                        <!-- Email -->
                         <div class="mb-4 mt-4">
                             <label class="form-label fw-bold">Email Address (confirmation will be sent here)</label>
                             <input type="email" name="email" class="form-control" placeholder="you@email.com" required>
@@ -72,7 +70,6 @@
 
                         <hr class="my-4">
 
-                        <!-- Payment Details -->
                         <h6 class="mb-3">Payment Details</h6>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Card Number</label>
@@ -103,7 +100,6 @@
             </div>
         </div>
 
-        <!-- Order Summary -->
         <div class="col-lg-4">
             <div class="card shadow sticky-top" style="top: 20px;">
                 <div class="card-body">
@@ -127,7 +123,6 @@
 </div>
 
 <script>
-// Phone: (###) ###-####
 function formatPhone(input) {
     let value = input.value.replace(/\D/g, '');
     if (value.length > 10) value = value.substring(0, 10);
@@ -139,14 +134,12 @@ function formatPhone(input) {
     input.value = value;
 }
 
-// Card Number: 4242 4242 4242 4242
 function formatCardNumber(input) {
     let value = input.value.replace(/\D/g, '').substring(0, 16);
     value = value.replace(/(\d{4})/g, '$1 ').trim();
     input.value = value;
 }
 
-// Expiry: MM/YY
 function formatExpiry(input) {
     let value = input.value.replace(/\D/g, '');
     if (value.length >= 2) value = value.substring(0,2) + '/' + value.substring(2,4);

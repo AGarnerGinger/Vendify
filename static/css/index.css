@@ -1,4 +1,4 @@
-body{
+body {
     margin: 0;
     background: #000;
     color: white;
@@ -6,45 +6,25 @@ body{
     font-family: Arial, sans-serif;
 }
 
-/* HERO VIDEO */
-
-.video-hero{
+.video-hero {
     position: relative;
     height: 100vh;
     overflow: hidden;
 }
 
-
-/* SPLIT SECTION */
-
-.small-hero{
-    display: flex;
-    position: relative;
-    overflow: hidden;
-    background: #000;
-}
-
-
-.image img{
-    width: 110%;
-    height: auto;
-    object-fit: cover;
-    border-radius: 10px
-}
-
-.video-hero video{
+.video-hero video {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.video-overlay{
+.video-overlay {
     position: absolute;
     inset: 0;
     background: rgba(0,0,0,0.4);
 }
 
-.hero-content{
+.hero-content {
     position: absolute;
     bottom: 80px;
     left: 60px;
@@ -52,22 +32,22 @@ body{
     max-width: 600px;
 }
 
-.hero-subtitle{
+.hero-subtitle {
     letter-spacing: 3px;
     text-transform: uppercase;
     font-size: 14px;
 }
 
-.hero-content h1{
+.hero-content h1 {
     font-size: 64px;
     margin: 20px 0;
     line-height: 1.1;
 }
 
-.hero-btn{
+.hero-btn {
     display: inline-block;
     padding: 15px 35px;
-    background: grey;
+    background: #ff69b4;
     color: black;
     text-decoration: none;
     border-radius: 50px;
@@ -75,113 +55,162 @@ body{
     transition: 0.3s ease;
 }
 
-.hero-btn:hover{
+.hero-btn:hover {
     transform: scale(1.05);
 }
 
-
-/* SEARCH */
-
-.search-wrapper{
-    padding: 80px 20px;
-    display: flex;
-    justify-content: center;
-    background: #050505;
+.small-hero {
+    position: relative;
+    height: 85vh;
+    overflow: hidden;
+    background: #000;
 }
 
-.search-bar{
+.small-hero .image {
+    position: absolute;
+    top: -15%;
+    left: 0;
     width: 100%;
-    max-width: 700px;
+    height: 115%;
+}
+
+.small-hero .image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+}
+
+.small-hero .video-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+}
+
+.small-hero .hero-content {
+    position: absolute;
+    bottom: 80px;
+    left: 60px;
+    z-index: 2;
+    max-width: 600px;
+}
+
+.mothers-day-banner {
     display: flex;
-    background: white;
-    border-radius: 60px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 50px;
+    padding: 80px 8%;
+    background: linear-gradient(to right, #120909, #1d1111);
     overflow: hidden;
 }
 
-.search-bar input{
-    flex: 1;
-    border: none;
-    padding: 20px;
+.mothers-content {
+    max-width: 550px;
+}
+
+.mothers-tag {
+    display: inline-block;
+    padding: 10px 18px;
+    background: #ffcade;
+    color: black;
+    border-radius: 50px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.mothers-content h2 {
+    font-size: 52px;
+    line-height: 1.1;
+    margin-bottom: 20px;
+}
+
+.mothers-content p {
+    color: rgba(255,255,255,0.75);
     font-size: 18px;
+    margin-bottom: 35px;
 }
 
-.search-bar button{
-    border: none;
-    padding: 20px 35px;
-    cursor: pointer;
+.mothers-btn {
+    display: inline-block;
+    padding: 15px 35px;
+    background: #ff69b4;
+    color: black;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s ease;
 }
 
-/* PRODUCTS */
+.mothers-btn:hover {
+    transform: scale(1.05);
+}
 
-.featured-section{
+.mothers-image img {
+    width: 100%;
+    max-width: 860px;
+    border-radius: 36px;
+}
+
+.featured-section {
     padding: 100px 5%;
 }
 
-.section-header{
+.section-header {
     margin-bottom: 50px;
 }
 
-.section-header p{
+.section-header p {
     text-transform: uppercase;
     letter-spacing: 3px;
     opacity: 0.7;
 }
 
-.section-header h2{
+.section-header h2 {
     font-size: 52px;
 }
 
-.product-grid{
+.product-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
     gap: 30px;
 }
 
-.luxury-card{
+.luxury-card {
     background: #111;
     border-radius: 24px;
     overflow: hidden;
     transition: 0.4s ease;
-    transform: translateY(40px);
-    opacity: 0;
 }
 
-.luxury-card.show{
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.luxury-card:hover{
+.luxury-card:hover {
     transform: translateY(-10px);
 }
 
-.luxury-card img{
+.luxury-card img {
     width: 100%;
     height: 350px;
     object-fit: cover;
 }
 
-.card-info{
+.card-info {
     padding: 25px;
 }
 
-.card-info h3{
-    margin-bottom: 10px;
-}
-
-.price{
+.price {
     font-size: 28px;
     font-weight: bold;
 }
 
-.card-buttons{
+.card-buttons {
     margin-top: 25px;
     display: flex;
     gap: 10px;
 }
 
 .details-btn,
-.cart-btn{
+.cart-btn {
     flex: 1;
     padding: 14px;
     border-radius: 50px;
@@ -191,137 +220,39 @@ body{
     cursor: pointer;
 }
 
-.details-btn{
-    background: grey;
+.details-btn {
+    background: #ff69b4;
     color: black;
 }
 
-.cart-btn{
+.cart-btn {
     background: #2b2b2b;
     color: white;
 }
 
-/* MOBILE */
-
-@media(max-width:768px){
-
-    .hero-content{
+@media(max-width:768px) {
+    .hero-content {
         left: 25px;
         right: 25px;
         bottom: 50px;
     }
-
-    .hero-content h1{
+    .hero-content h1 {
         font-size: 42px;
     }
-
-    .section-header h2{
-        font-size: 36px;
+    .small-hero {
+        height: 70vh;
     }
-
+    .small-hero .image {
+        top: -10%;
+    }
 }
 
-/* MOTHER'S DAY SECTION */
-
-.mothers-day-banner{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 50px;
-
-    padding: 80px 8%;
-
-    background: linear-gradient(
-        to right,
-        #120909,
-        #1d1111
-    );
-
-    overflow: hidden;
-}
-
-.mothers-content{
-    max-width: 550px;
-}
-
-.mothers-tag{
-    display: inline-block;
-
-    padding: 10px 18px;
-
-    background: #ffcade;
-
-    color: white;
-
-    border-radius: 50px;
-
-    font-size: 14px;
-
-    margin-bottom: 20px;
-
-    font-weight: bold;
-}
-
-.mothers-content h2{
-    font-size: 52px;
-
-    line-height: 1.1;
-
-    margin-bottom: 20px;
-}
-
-.mothers-content p{
-    color: rgba(255,255,255,0.75);
-
-    font-size: 18px;
-
-    margin-bottom: 35px;
-}
-
-.mothers-btn{
-    display: inline-block;
-
-    padding: 15px 35px;
-
-    background: pink;
-
-    color: black;
-
-    border-radius: 50px;
-
-    text-decoration: none;
-
-    font-weight: bold;
-
-    transition: 0.3s ease;
-}
-
-.mothers-btn:hover{
-    transform: scale(1.05);
-}
-
-.mothers-image img{
-    width: 860px;
-
-    max-width: 100%;
-
-    border-radius: 36px;
-}
-
-/* MOBILE */
-
-@media(max-width: 900px){
-
-    .mothers-day-banner{
+@media(max-width: 900px) {
+    .mothers-day-banner {
         flex-direction: column;
-
         text-align: center;
     }
-
-    .mothers-content h2{
+    .mothers-content h2 {
         font-size: 38px;
     }
-
 }
-

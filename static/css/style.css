@@ -1,5 +1,4 @@
-/* static/css/style.css */
-
+/*
 :root {
     --primary: #2563eb;
     --success: #16a34a;
@@ -18,7 +17,6 @@ body {
     overflow-x: hidden;
 }
 
-/* ==================== FORCE LINK COLORS ==================== */
 a, a:link, a:visited {
     color: white !important;
     text-decoration: none !important;
@@ -29,7 +27,6 @@ a:hover, a:focus {
     text-decoration: underline !important;
 }
 
-/* Make sure Bootstrap doesn't override admin/dashboard links */
 .card a,
 .card a:hover,
 .card a:link,
@@ -38,18 +35,15 @@ a:hover, a:focus {
     text-decoration: none !important;
 }
 
-/* Header links stay white */
 nav a,
 nav a:hover {
     color: white !important;
 }
 
-/* Rest of your styles */
 h1, h2, h3, h4, h5 {
     font-weight: 600;
 }
 
-/* Header */
 header {
     background: var(--black);
     color: black;
@@ -57,7 +51,6 @@ header {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-/* Product Cards */
 .product-card {
     transition: all 0.3s ease;
     border: none;
@@ -84,7 +77,6 @@ header {
     opacity: 0.7;
 }
 
-/* Buttons */
 .btn-success {
     background-color: var(--success);
     border: none;
@@ -94,7 +86,6 @@ header {
     background-color: #15803d;
 }
 
-/* Floating Chat Button */
 #chat-button {
     position: fixed;
     bottom: 25px;
@@ -117,279 +108,497 @@ header {
     background: #1e40af;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .product-card {
         margin-bottom: 20px;
     }
-
     .hero {
         height: 50vh;
     }
 }
 
-/* =========================
-   LUXURY GLASS NAVBAR
-========================= */
-
 .glass-nav{
-
     position: fixed;
-
     top: 0px;
-
     left: 50%;
-
     transform: translateX(-50%);
-
     width: 94%;
-
     z-index: 1000;
-
     background: rgba(8,8,8,0.45);
-
     backdrop-filter: blur(16px);
-
     border: 1px solid rgba(255,255,255,0.08);
-
     border-radius: 0 0 24px 24px;
-
     padding: 18px 30px;
 }
 
-/* CONTAINER */
-
 .custom-nav-container{
-
     display: flex;
-
     align-items: center;
-
     justify-content: space-between;
 }
 
-/* LOGO */
-
 .nav-logo{
-
     color: white !important;
-
     text-decoration: none !important;
-
     font-size: 30px;
-
     font-weight: bold;
-
     letter-spacing: 2px;
 }
 
-/* WRAPPER */
-
 .custom-nav-wrapper{
-
     display: flex !important;
-
     align-items: center;
-
     justify-content: space-between;
-
     width: 100%;
 }
 
-/* LINKS */
-
 .nav-links{
-
     display: flex;
-
     align-items: center;
-
     gap: 28px;
-
     list-style: none;
-
     margin: 0 auto;
-
     padding: 0;
 }
 
 .nav-links a{
-
     color: white !important;
-
     text-decoration: none !important;
-
     font-size: 16px;
-
     transition: 0.3s ease;
 }
 
 .nav-links a:hover{
-
     opacity: 0.7;
 }
 
-/* SEARCH */
-
 .nav-search input{
-
     width: 220px;
-
     padding: 11px 18px;
-
     border-radius: 50px;
-
     border: 1px solid rgba(255,255,255,0.12);
-
     background: rgba(255,255,255,0.08);
-
     color: white;
-
     outline: none;
 }
 
 .nav-search input::placeholder{
-
     color: rgba(255,255,255,0.65);
 }
-
-/* MOBILE */
 
 @media(max-width: 991px){
 
     .custom-nav-wrapper{
-
         flex-direction: column;
-
         gap: 18px;
-
         margin-top: 20px;
     }
-
     .nav-links{
-
         flex-direction: column;
-
         gap: 14px;
     }
-
     .nav-search{
-
         width: 100%;
     }
-
     .nav-search input{
-
         width: 100%;
     }
-
 }
-
-/* FIX NAV LINKS */
 
 .nav-links{
 
     list-style: none !important;
-
     display: flex !important;
-
     flex-direction: row !important;
-
     align-items: center;
-
     gap: 28px;
-
     margin: 0 auto !important;
-
     padding: 0 !important;
 }
 
-/* REMOVE BULLETS */
-
 .nav-links li{
-
     list-style: none !important;
 }
 
-/* FIX LINKS */
-
 .nav-links a{
-
     color: white !important;
-
     text-decoration: none !important;
-
     font-size: 16px;
 }
 
-/* WRAPPER */
-
 .custom-nav-wrapper{
-
     display: flex !important;
-
     align-items: center;
-
     justify-content: space-between;
-
     width: 100%;
 }
 
-/* =========================
-   NORMAL NAVBAR
-========================= */
-
 .normal-nav{
-
     width: 100%;
-
     background: #050505;
-
     padding: 18px 40px;
-
     position: sticky;
-
     top: 0;
-
     z-index: 1000;
-
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .normal-nav-container{
-
     display: flex;
-
     justify-content: space-between;
-
     align-items: center;
 }
 
 .normal-logo{
-
     color: white !important;
-
     text-decoration: none !important;
-
     font-size: 30px;
-
     font-weight: bold;
 }
 
 .normal-links{
-
     display: flex;
-
     align-items: center;
-
     gap: 28px;
 }
 
 .normal-links a{
-
     color: white !important;
-
     text-decoration: none !important;
-
     font-size: 15px;
+}
+ */
+
+/* ==================== CENTERED GLASS NAVBAR ==================== */
+/* ==================== WIDER + TALLER CENTERED GLASS NAVBAR ==================== */
+/* ==================== WIDER + TALLER NAVBAR ==================== */
+.glass-nav {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 97%;                    /* Even wider */
+    max-width: 1480px;
+    z-index: 1000;
+    background: rgba(8, 8, 8, 0.82) !important;
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0 0 30px 30px;
+    padding: 24px 50px;            /* Taller */
+    box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+}
+
+.custom-nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.nav-logo {
+    color: white !important;
+    text-decoration: none !important;
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    flex-shrink: 0;
+}
+
+/* CENTER LINKS */
+.nav-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 38px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links a {
+    color: white !important;
+    text-decoration: none !important;
+    font-size: 16.5px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.nav-links a:hover {
+    color: #ff69b4 !important;
+}
+
+/* SEARCH STUCK TO RIGHT */
+.nav-search input {
+    width: 290px;
+    padding: 14px 24px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.09);
+    color: white;
+    outline: none;
+    font-size: 15px;
+}
+
+.nav-search input::placeholder {
+    color: rgba(255,255,255,0.65);
+}
+
+/* Body spacing */
+body {
+    margin-top: 120px !important;   /* Adjusted for taller navbar */
+    background: #000;
+    color: white;
+}
+
+/* Other styles (cards, buttons, etc.) */
+.card, .luxury-card, .product-card {
+    background: #111 !important;
+    border-radius: 24px;
+}
+
+.btn, .btn-primary, .btn-success, .hero-btn, .mothers-btn, .details-btn {
+    background: #ff69b4 !important;
+    color: black !important;
+    border-radius: 50px;
+    font-weight: bold;
+}
+
+.btn:hover {
+    background: white !important;
+    color: black !important;
+    transform: scale(1.05);
+}
+
+#chat-button {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 60px;
+    height: 60px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 28px;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+#chat-button:hover {
+    transform: scale(1.1);
+    background: #1e40af;
+}
+
+body {
+    margin-top: 120px !important;
+}
+
+body:has(.login-page, .register-page),
+body:has([data-page="auth"]) {
+    margin-top: 0 !important;
+}
+
+/* ==================== DARK INPUT FIELDS (Black Background) ==================== */
+.form-control,
+input,
+select,
+textarea,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="file"] {
+    background: #1a1a1a !important;
+    color: #ffffff !important;
+    border: 1px solid #444 !important;
+    border-radius: 12px !important;
+}
+
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    background: #222 !important;
+    color: #fff !important;
+    border-color: #ff69b4 !important;
+    box-shadow: 0 0 0 3px rgba(255, 105, 180, 0.2) !important;
+}
+
+/* Fix white backgrounds in forms */
+.card-body input,
+.card-body textarea,
+.card-body select {
+    background: #1a1a1a !important;
+    color: white !important;
+}
+
+/* Specific fix for Add Product page */
+#add-product-form input,
+#add-product-form textarea {
+    background: #1a1a1a !important;
+}
+
+/* ==================== DARK CHAT / MESSAGING SYSTEM ==================== */
+.chat-body,
+#chat-body,
+.card-body,
+.messages,
+.message-area,
+.chat-window,
+.chat-content,
+.list-group,
+.conversations {
+    background: #0f0f0f !important;
+    color: white !important;
+}
+
+.message,
+.chat-message,
+.message-bubble {
+    background: #222 !important;
+    color: white !important;
+}
+
+.message.sent,
+.chat-message.sent {
+    background: #ff69b4 !important;
+    color: black !important;
+}
+
+/* Chat input area */
+.chat-footer,
+.input-group,
+.message-input {
+    background: #1a1a1a !important;
+    border-top: 1px solid #333 !important;
+}
+
+input#message,
+textarea#message {
+    background: #222 !important;
+    color: white !important;
+    border: 1px solid #444 !important;
+}
+
+/* ==================== DARK CHECKBOX & VARIANT SECTION ==================== */
+.form-check-input {
+    background-color: #1a1a1a !important;
+    border: 2px solid #555 !important;
+}
+
+.form-check-label {
+    color: white !important;
+}
+
+.form-check {
+    background: #1a1a1a !important;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+/* Specific fix for the variants checkbox in add_product.html */
+#has_variants,
+.form-check-input[type="checkbox"] {
+    accent-color: #ff69b4;
+}
+
+/* Make the entire variant section dark */
+#variants-section,
+.variant-row {
+    background: #1a1a1a !important;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+/* ==================== DARK VARIANTS CHECKBOX SECTION ==================== */
+.form-check,
+#has_variants,
+.variant-checkbox-container {
+    background: #1a1a1a !important;
+    border-radius: 12px !important;
+    margin-left: 5px;
+    margin-right: 10px;
+    border: 1px solid #333 !important;
+}
+
+.form-check-input {
+    background-color: #222 !important;
+    border: 2px solid #555 !important;
+    accent-color: #ff69b4;
+}
+
+.form-check-label {
+    color: white !important;
+    font-weight: 500;
+}
+
+/* Make the whole variants toggle area dark */
+#variants-section {
+    background: #1a1a1a !important;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #333;
+}
+
+/* Force dark background on the white box */
+.form-check,
+div:has(#has_variants),
+div:has(.form-check-input) {
+    background: #1a1a1a !important;
+    color: white !important;
+}
+
+/* ==================== DARK CHAT / CONVERSATIONS SIDEBAR ==================== */
+
+/* Main conversations box */
+.list-group,
+.card.shadow,
+.conversations,
+.chat-sidebar {
+    background: #1a1a1a !important;
+    border: 1px solid #333 !important;
+}
+
+/* Header of conversations */
+.card-header.bg-primary,
+.list-group-item.active,
+.bg-primary {
+    background: #0d6efd !important;
+    color: white !important;
+}
+
+/* Message area when no conversation selected */
+.card-body.text-muted,
+.text-center.text-muted {
+    background: #1a1a1a !important;
+    color: #aaa !important;
+}
+
+/* Individual conversation items */
+.list-group-item,
+.list-group-item-action {
+    background: #222 !important;
+    color: white !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+.list-group-item:hover,
+.list-group-item.active {
+    background: #333 !important;
+}
+
+/* "No messages yet" box */
+.list-group-item.text-center,
+div:contains("No messages yet") {
+    background: #1a1a1a !important;
+    color: #aaa !important;
 }

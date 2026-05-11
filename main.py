@@ -115,7 +115,6 @@ def products_page():
     sort_by = request.args.get('sort', 'newest')
 
     with get_db() as conn:
-        # Get vendors for filter dropdown
         vendors = conn.execute(text("""
             SELECT user_id, username 
             FROM users 
@@ -139,14 +138,13 @@ def products_page():
             query += " AND p.vendor_id = :vid"
             params["vid"] = vendor_filter
 
-        # MySQL-compatible sorting (NULL sale_price last)
         if sort_by == 'price_low':
             query += " ORDER BY p.sale_price IS NULL, p.sale_price ASC, p.price ASC"
         elif sort_by == 'price_high':
             query += " ORDER BY p.sale_price IS NULL DESC, p.sale_price DESC, p.price DESC"
         elif sort_by == 'vendor':
             query += " ORDER BY u.username ASC"
-        else:  # newest (default)
+        else:
             query += " ORDER BY p.product_id DESC"
 
         prods = conn.execute(text(query), params).fetchall()
@@ -161,7 +159,6 @@ def products_page():
 @app.route('/product/<int:pid>')
 def product_detail(pid):
     with get_db() as conn:
-        # Main product + vendor name
         product = conn.execute(text("""
             SELECT p.*, u.username as vendor_name 
             FROM products p 
@@ -173,14 +170,12 @@ def product_detail(pid):
             flash("Product not found", "danger")
             return redirect(url_for('products_page'))
 
-        # Get variants from the product_variants table (this is the correct table)
         variants = conn.execute(text("""
             SELECT * FROM product_variants 
             WHERE product_id = :pid 
             ORDER BY variant_name
         """), {"pid": pid}).fetchall()
 
-        # Get reviews
         reviews = conn.execute(text("""
             SELECT r.*, u.username 
             FROM reviews r
@@ -253,7 +248,6 @@ def add_product():
 
     if request.method == 'POST':
         try:
-            # === Main product image ===
             image_filename = None
             image = request.files.get('image')
             if image and image.filename and allowed_file(image.filename):
@@ -280,7 +274,6 @@ def add_product():
                 product_id = result.lastrowid
                 conn.commit()
 
-            # === Save variants + their images ===
             variant_names = request.form.getlist('variant_name[]')
             variant_prices = request.form.getlist('variant_price[]')
             variant_inventories = request.form.getlist('variant_inventory[]')
@@ -298,7 +291,6 @@ def add_product():
                         v_price = float(variant_prices[i]) if variant_prices[i] and variant_prices[i].strip() else None
                         v_inventory = int(variant_inventories[i]) if variant_inventories[i] else 0
 
-                        # Variant image
                         v_image_filename = None
                         if i < len(variant_images) and variant_images[i].filename:
                             v_file = variant_images[i]
@@ -342,14 +334,14 @@ def cart():
                 p.price,
                 p.sale_price,
                 p.image,
-                p.variant_name,
-                p.parent_product_id
+                p.parent_product_id,
+                pv.variant_name
             FROM cart_items c
             JOIN products p ON c.product_id = p.product_id
+            LEFT JOIN product_variants pv ON pv.variant_id = c.product_id
             WHERE c.user_id = :uid
         """), {"uid": session['user_id']}).fetchall()
 
-    # Calculate total
     total = 0
     for item in items:
         price = float(item.sale_price) if item.sale_price else float(item.price)
@@ -398,7 +390,6 @@ def remove_from_cart(pid):
     return jsonify({"success": True})
 
 
-
 # ====================== CHECKOUT & ORDERS ======================
 @app.route('/checkout', methods=['GET'])
 def checkout():
@@ -439,30 +430,26 @@ def checkout_confirm():
             total = sum(
                 (float(item.sale_price) if item.sale_price else float(item.price)) * item.quantity for item in items)
 
-            # Create order
             result = conn.execute(text("""
                 INSERT INTO orders (user_id, total_amount, status, order_date)
                 VALUES (:uid, :total, 'pending', NOW())
             """), {"uid": session['user_id'], "total": total})
             order_id = result.lastrowid
 
-            # Reduce inventory
             for item in items:
                 conn.execute(text("UPDATE products SET inventory = inventory - :qty WHERE product_id = :pid"),
                              {"qty": item.quantity, "pid": item.product_id})
 
-            # Clear cart
             conn.execute(text("DELETE FROM cart_items WHERE user_id = :uid"), {"uid": session['user_id']})
             conn.commit()
 
-        # Send confirmation email
         if email:
             try:
                 import smtplib
                 from email.mime.text import MIMEText
 
-                sender_email = "your.email@gmail.com"  # ← CHANGE THIS
-                sender_password = "your-app-password"  # ← CHANGE THIS
+                sender_email = "your.email@gmail.com"
+                sender_password = "your-app-password"
 
                 order_items_text = "\n".join([f"• {item.title} × {item.quantity}" for item in items])
 
@@ -517,7 +504,7 @@ def my_orders():
         return render_template('orders.html', orders=orders)
 
     except Exception as e:
-        print("Orders error:", e)  # for debugging
+        print("Orders error:", e)
         flash("There was an issue loading your orders.", "danger")
         return render_template('orders.html', orders=[])
 
@@ -545,13 +532,11 @@ def chat():
                         "msg": message_text
                     })
                     conn.commit()
-                # Refresh the same conversation
                 return redirect(url_for('chat', vendor_id=receiver_id))
         except Exception as e:
             print("Chat error:", e)
             flash("Failed to send message", "danger")
 
-    # GET - load page
     with get_db() as conn:
         if session.get('user_type') == 'customer':
             conversations = []
@@ -610,7 +595,6 @@ def complaints_page():
         return redirect(url_for('login'))
 
     if session.get('user_type') == 'admin':
-        # Admin can view all and update status
         if request.method == 'POST':
             try:
                 complaint_id = request.form.get('complaint_id')
@@ -633,7 +617,6 @@ def complaints_page():
             """)).fetchall()
         return render_template('complaints.html', complaints=complaints, is_admin=True)
 
-    # Regular user
     if request.method == 'POST':
         with get_db() as conn:
             conn.execute(text("""

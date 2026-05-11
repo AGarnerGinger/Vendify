@@ -6,7 +6,6 @@
     <h1 class="mb-4">Complaints & Support</h1>
 
     {% if is_admin %}
-        <!-- Admin View -->
         <h2 class="mb-4">All Customer Complaints</h2>
 
         {% if complaints %}
@@ -59,9 +58,7 @@
         {% endif %}
 
     {% else %}
-        <!-- Regular User View -->
         <div class="row">
-            <!-- Submit New Complaint -->
             <div class="col-lg-5 mb-5">
                 <div class="card shadow">
                     <div class="card-header bg-danger text-white">
@@ -92,7 +89,6 @@
                 </div>
             </div>
 
-            <!-- My Complaints -->
             <div class="col-lg-7">
                 <h4>My Complaints</h4>
                 {% if complaints %}
