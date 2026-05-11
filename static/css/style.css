@@ -602,3 +602,14 @@ div:contains("No messages yet") {
     background: #1a1a1a !important;
     color: #aaa !important;
 }
+
+.vendor-name {
+    color: #2563eb !important;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.vendor-name strong {
+    color: #1e40af;
+}

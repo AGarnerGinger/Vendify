@@ -45,47 +45,51 @@
         <div class="col-6 col-md-4 col-lg-3">
             <div class="card h-100 shadow-sm product-card">
 
-                {% if p.image %}
-                    <img src="{{ url_for('static', filename='uploads/products/' + p.image) }}"
-                         class="card-img-top" alt="{{ p.title }}"
-                         style="height: 220px; object-fit: cover;">
-                {% else %}
-                    <div class="bg-light d-flex align-items-center justify-content-center"
-                         style="height: 220px;">
-                        <span class="text-muted">No Image</span>
-                    </div>
-                {% endif %}
+    {% if p.image %}
+        <img src="{{ url_for('static', filename='uploads/products/' + p.image) }}"
+             class="card-img-top" alt="{{ p.title }}"
+             style="height: 220px; object-fit: cover;">
+    {% else %}
+        <div class="bg-light d-flex align-items-center justify-content-center"
+             style="height: 220px;">
+            <span class="text-muted">No Image</span>
+        </div>
+    {% endif %}
 
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ p.title }}</h5>
-                    <small class="text-muted">by {{ p.vendor_name }}</small>
+    <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ p.title }}</h5>
 
-                    <div class="price mb-3">
-                        {% if p.sale_price %}
-                            <span class="text-danger fs-4 fw-bold">${{ p.sale_price }}</span>
-                            <span class="text-muted text-decoration-line-through ms-2">
-                                ${{ p.price }}
-                            </span>
-                        {% else %}
-                            <span class="fs-4 fw-bold">${{ p.price }}</span>
-                        {% endif %}
-                    </div>
+        <!-- IMPROVED VENDOR DISPLAY -->
+        <p class="vendor-name mb-2">
+            <strong>by {{ p.vendor_name }}</strong>
+        </p>
 
-                    <p class="text-muted small">
-                        Stock: <strong>{{ p.inventory }}</strong>
-                    </p>
+        <div class="price mb-3">
+            {% if p.sale_price %}
+                <span class="text-danger fs-4 fw-bold">${{ p.sale_price }}</span>
+                <span class="text-muted text-decoration-line-through ms-2">
+                    ${{ p.price }}
+                </span>
+            {% else %}
+                <span class="fs-4 fw-bold">${{ p.price }}</span>
+            {% endif %}
+        </div>
 
-                    <div class="mt-auto d-grid gap-2">
-                        <a href="/product/{{ p.product_id }}" class="btn btn-outline-primary">
-                            View Details
-                        </a>
-                        <button onclick="addToCart({{ p.product_id }})"
-                                class="btn btn-success">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <p class="text-muted small">
+            Stock: <strong>{{ p.inventory }}</strong>
+        </p>
+
+        <div class="mt-auto d-grid gap-2">
+            <a href="/product/{{ p.product_id }}" class="btn btn-outline-primary">
+                View Details
+            </a>
+            <button onclick="addToCart({{ p.product_id }})"
+                    class="btn btn-success">
+                Add to Cart
+            </button>
+        </div>
+    </div>
+</div>
         </div>
         {% endfor %}
     </div>
